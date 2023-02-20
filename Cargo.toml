@@ -1,8 +1,9 @@
 [package]
 name = "xddmod"
 version = "0.1.0"
+authors = ["Gian Lu <fusillicode@gmail.com>"]
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+sqlx = { version = "0.6.2", features = ["runtime-tokio-native-tls", "uuid", "json", "chrono", "sqlite", "offline"] }
+twitch-irc = { version = "5.0.0" }
