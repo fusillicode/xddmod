@@ -2,6 +2,7 @@ use std::net::SocketAddr;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Duration;
 
 use axum::async_trait;
 use axum::extract::State;
@@ -54,39 +55,53 @@ async fn main() {
     });
 
     let app = Router::new()
-        .route("/start", get(start))
-        .route("/auth", get(auth_callback))
+        .route("/", get(auth_callback))
         .with_state(app_state);
 
-    axum::Server::bind(&app_config.socket_addr)
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
-}
+    tokio::spawn(async move {
+        axum::Server::bind(&app_config.socket_addr)
+            .serve(app.into_make_service())
+            .await
+            .unwrap();
+    });
 
-async fn start<T: TokenStorage>(State(app_state): State<Arc<AppState<T>>>) -> Redirect {
     let auth_callback_url = {
-        let mut x = app_state.config.server_url.clone();
+        let mut x = app_config.server_url.clone();
         x.set_path("auth");
         x
     };
 
     let mut user_token_builder = UserTokenBuilder::new(
-        app_state.config.client_id.clone(),
-        app_state.config.client_secret.clone(),
+        app_config.client_id.clone(),
+        app_config.client_secret.clone(),
         auth_callback_url,
     );
 
+    user_token_builder.set_scopes(vec![
+        twitch_oauth2::Scope::ChatRead,
+        twitch_oauth2::Scope::ChatEdit,
+    ]);
+
     let (auth_url, _) = user_token_builder.generate_url();
 
-    Redirect::to(auth_url.as_str())
+    println!("GO HERE {} AND THEN CONTINUE...", auth_url);
+
+    std::io::stdin().read_line(String::new()).unwrap();
+
+    while File::open("foo.txt").await.is_err() {
+        tokio::time::sleep(Duration::from_secs(2));
+        dbg!("WAIT");
+    }
+
+    dbg!("DONE");
 }
 
 async fn auth_callback<T: TokenStorage>(
     State(app_state): State<Arc<AppState<T>>>,
     // Query(auth_result): Query<AuthResult>,
-) -> Redirect {
-    Redirect::to("/start")
+) -> () {
+    let mut file = File::create("foo.txt").await.unwrap();
+    file.write_all(b"Hello, world!").await.unwrap();
 }
 
 #[derive(Debug, Deserialize, Clone)]
