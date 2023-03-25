@@ -10,6 +10,8 @@ use axum::routing::Router;
 use config::Config;
 use config::Environment;
 use serde::Deserialize;
+use sqlx::types::chrono::DateTime;
+use sqlx::types::chrono::Utc;
 use sqlx::SqlitePool;
 use tokio::sync::Mutex;
 use twitch_irc::login::GetAccessTokenResponse;
@@ -111,21 +113,48 @@ async fn main() {
         RefreshingLoginCredentials<CustomTokenStorage>,
     >::new(client_config);
 
-    client.join("caedrel".to_owned()).unwrap();
+    client.join("fusillicode".to_owned()).unwrap();
 
     #[allow(clippy::single_match)]
     let join_handle = tokio::spawn(async move {
         while let Some(message) = incoming_messages.recv().await {
             match message {
                 twitch_irc::message::ServerMessage::Privmsg(message) => {
-                    if message.message_text.starts_with("!casting") {
-                        client
-                            .say_in_reply_to(
-                                &message,
-                                "Today Marc will cast the last 3 games".into(),
-                            )
+                    if !message.message_text.starts_with('!') {
+                        continue;
+                    }
+
+                    match message.message_text.split_once(' ') {
+                        Some((shortcut, expansion)) => {
+                            dbg!(&message);
+                            if !message.badges.iter().any(|x| {
+                                x.name == "moderator"
+                                    || x.name == "admin"
+                                    || x.name == "broadcaster"
+                            }) {
+                                continue;
+                            }
+                            NewCmd {
+                                shortcut: shortcut.into(),
+                                expansion: expansion.into(),
+                                created_by: message.sender.login,
+                            }
+                            .insert(&db_pool)
                             .await
                             .unwrap();
+                        }
+                        None => {
+                            if let Some(cmd) =
+                                Cmd::last_by_shortcut(&message.message_text, &db_pool)
+                                    .await
+                                    .unwrap()
+                            {
+                                client
+                                    .say_in_reply_to(&message, cmd.expansion)
+                                    .await
+                                    .unwrap();
+                            }
+                        }
                     }
                 }
 
@@ -135,6 +164,59 @@ async fn main() {
     });
 
     join_handle.await.unwrap();
+}
+
+pub struct NewCmd {
+    pub shortcut: String,
+    pub expansion: String,
+    pub created_by: String,
+}
+
+impl NewCmd {
+    pub async fn insert<'a>(
+        &self,
+        executor: impl sqlx::sqlite::SqliteExecutor<'a>,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            "insert into cmds (shortcut, expansion, created_by) values ($1, $2, $3)",
+            self.shortcut,
+            self.expansion,
+            self.created_by,
+        )
+        .execute(executor)
+        .await
+        .map(|_| ())?;
+
+        Ok(())
+    }
+}
+
+pub struct Cmd {
+    pub id: i64,
+    pub shortcut: String,
+    pub expansion: String,
+    pub created_by: String,
+    pub created_at: DateTime<Utc>,
+}
+
+impl Cmd {
+    pub async fn last_by_shortcut<'a>(
+        shortcut: &str,
+        executor: impl sqlx::sqlite::SqliteExecutor<'a>,
+    ) -> Result<Option<Self>, sqlx::Error> {
+        sqlx::query_as!(
+            Self,
+            r#"
+                select id, shortcut, expansion, created_by, created_at as "created_at!: DateTime<Utc>"
+                from cmds
+                where shortcut = $1
+                order by id desc
+            "#,
+            shortcut,
+        )
+        .fetch_optional(executor)
+        .await
+    }
 }
 
 #[derive(Debug, Deserialize, Clone)]

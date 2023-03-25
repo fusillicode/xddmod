@@ -1,0 +1,55 @@
+{
+  "db": "SQLite",
+  "2b330f4585c11d1758ab918b3de0c8b0b9eb3ceab613f9d3c4f3ebcc2516e50b": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "shortcut",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "expansion",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "created_by",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "created_at!: DateTime<Utc>",
+          "ordinal": 4,
+          "type_info": "Null"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "\n                select id, shortcut, expansion, created_by, created_at as \"created_at!: DateTime<Utc>\"\n                from cmds\n                where shortcut = $1\n                order by id desc\n            "
+  },
+  "d9bd01a8aa26703522ceed3aa780c16885aa49f31550c9cb7b24cd61055d5863": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 3
+      }
+    },
+    "query": "insert into cmds (shortcut, expansion, created_by) values ($1, $2, $3)"
+  }
+}
