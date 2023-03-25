@@ -53,7 +53,9 @@ async fn main() {
 
     let (auth_url, _) = user_token_builder.generate_url();
 
-    println!("GET THE FUCK HERE {}", auth_url);
+    println!("GET THE FUCK HERE");
+    println!("{}", auth_url);
+    println!("");
 
     let app_state = Arc::new(AppState {
         auth_response_step_1: Mutex::new(None),
@@ -78,6 +80,8 @@ async fn main() {
         println!("WAITING...");
     }
 
+    println!("LESTGO!!! 🚀");
+
     let AuthResponseStep1 { code, state } =
         app_state.auth_response_step_1.lock().await.clone().unwrap();
     let client = reqwest::Client::new();
@@ -87,21 +91,9 @@ async fn main() {
         .await
         .unwrap();
 
-    // let http_client = reqwest::Client::new();
-    // let response = http_client
-    //     .execute(ciccia.try_into().unwrap())
-    //     .await
-    //     .unwrap();
-    // let merda = axum::http::Response::builder()
-    //     .status(200)
-    //     .body(response.bytes().await.unwrap())
-    //     .unwrap();
-    // let twitch_response = TwitchTokenResponse::from_response(&merda).unwrap();
-    // dbg!(&twitch_response);
-
     let get_access_token_response = GetAccessTokenResponse {
-        access_token: user_token.access_token.to_string(),
-        refresh_token: user_token.refresh_token.clone().unwrap().to_string(),
+        access_token: user_token.access_token.secret().into(),
+        refresh_token: user_token.refresh_token.clone().unwrap().secret().into(),
         expires_in: Some(user_token.expires_in().as_secs()),
     };
 
@@ -119,18 +111,26 @@ async fn main() {
         RefreshingLoginCredentials<CustomTokenStorage>,
     >::new(client_config);
 
-    dbg!("MERDA");
+    client.join("caedrel".to_owned()).unwrap();
 
-    // client.join("fusillicode".to_owned()).unwrap();
-    dbg!(client.get_channel_status("fusillicode".to_owned()).await);
-    client
-        .say("fusillicode".into(), "xdd".into())
-        .await
-        .unwrap();
-
+    #[allow(clippy::single_match)]
     let join_handle = tokio::spawn(async move {
         while let Some(message) = incoming_messages.recv().await {
-            println!("Received message: {:?}", message);
+            match message {
+                twitch_irc::message::ServerMessage::Privmsg(message) => {
+                    if message.message_text.starts_with("!casting") {
+                        client
+                            .say_in_reply_to(
+                                &message,
+                                "Today Marc will cast the last 3 games".into(),
+                            )
+                            .await
+                            .unwrap();
+                    }
+                }
+
+                _ => {}
+            }
         }
     });
 
@@ -147,7 +147,6 @@ async fn auth_callback(
     State(app_state): State<Arc<AppState>>,
     Query(auth_response_step_1): Query<AuthResponseStep1>,
 ) {
-    dbg!(&auth_response_step_1);
     let mut guard = app_state.auth_response_step_1.lock().await;
     *guard = Some(auth_response_step_1.clone());
 }
