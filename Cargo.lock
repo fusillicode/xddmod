@@ -1209,9 +1209,9 @@ dependencies = [
 
 [[package]]
 name = "reqwest"
-version = "0.11.14"
+version = "0.11.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21eed90ec8570952d53b772ecf8f206aa1ec9a3d76b2521c56c42973f2d91ee9"
+checksum = "0ba30cc2c0cd02af1222ed216ba659cdb2f879dfe3181852fe7c50b1d0005949"
 dependencies = [
  "base64 0.21.0",
  "bytes",
@@ -1789,8 +1789,6 @@ checksum = "3528ecfd12c466c6f163363caf2d02a71161dd5e1cc6ae7b34207ea2d42d81ed"
 [[package]]
 name = "twitch-irc"
 version = "5.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37784b5551aef05babf0f948683b4a1daedf0135a1954607639491955206f2e3"
 dependencies = [
  "async-trait",
  "bytes",
@@ -1816,11 +1814,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f989dfc9b45da60e50b16e18783b7f3e6531cd226f44e794ed7ba8da96e9addd"
 dependencies = [
  "aliri_braid",
+ "async-trait",
  "base64 0.21.0",
  "displaydoc",
  "http",
  "once_cell",
  "rand",
+ "reqwest",
  "serde",
  "serde_json",
  "thiserror",
@@ -2145,6 +2145,7 @@ dependencies = [
  "axum",
  "config",
  "hyper",
+ "reqwest",
  "serde",
  "serde_json",
  "sqlx",

@@ -9,11 +9,15 @@ anyhow = "1.0.69"
 axum = "0.6.7"
 config = "0.13.3"
 hyper = { version = "0.14.24", features = ["full"] }
+reqwest = "0.11.15"
 serde = "1.0.152"
 serde_json = "1.0.93"
 sqlx = { version = "0.6.2", features = ["runtime-tokio-native-tls", "uuid", "json", "chrono", "sqlite", "offline"] }
 tokio = { version = "1.25.0", features = ["full"] }
 tower = "0.4.13"
-twitch_oauth2 = "0.11.1"
-twitch-irc = { version = "5.0.0", features = ["with-serde", "refreshing-token-native-tls"] }
+twitch_oauth2 = { version = "0.11.1", features = ["client", "reqwest"] }
+twitch-irc = { version = "5.0.0", path = "/Users/gianlucarandazzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/twitch-irc-5.0.0", features = ["with-serde", "refreshing-token-native-tls"] }
 url = { version = "2.3.1", features = ["serde"] }
+
+[patch.crates-io]
+twitch-irc = { path = "/Users/gianlucarandazzo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/twitch-irc-5.0.0" }
