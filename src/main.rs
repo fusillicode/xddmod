@@ -31,6 +31,7 @@ async fn main() {
         .unwrap()
         .try_deserialize()
         .unwrap();
+    let channel_name = std::env::args().nth(1).unwrap();
 
     let db_pool = SqlitePool::connect(app_config.database_url.as_ref())
         .await
@@ -55,9 +56,7 @@ async fn main() {
 
     let (auth_url, _) = user_token_builder.generate_url();
 
-    println!("GET THE FUCK HERE");
-    println!("{}", auth_url);
-    println!("");
+    println!("\n{}", auth_url);
 
     let app_state = Arc::new(AppState {
         auth_response_step_1: Mutex::new(None),
@@ -79,10 +78,9 @@ async fn main() {
             break;
         }
         tokio::time::sleep(Duration::from_secs(2)).await;
-        println!("WAITING...");
     }
 
-    println!("LESTGO!!! 🚀");
+    println!("\n 🚀");
 
     let AuthResponseStep1 { code, state } =
         app_state.auth_response_step_1.lock().await.clone().unwrap();
@@ -113,7 +111,7 @@ async fn main() {
         RefreshingLoginCredentials<CustomTokenStorage>,
     >::new(client_config);
 
-    client.join("fusillicode".to_owned()).unwrap();
+    client.join(channel_name).unwrap();
 
     #[allow(clippy::single_match)]
     let join_handle = tokio::spawn(async move {
