@@ -1,3 +1,4 @@
+use sqlx::sqlite::SqliteExecutor;
 use sqlx::types::chrono::DateTime;
 use sqlx::types::chrono::Utc;
 
@@ -8,7 +9,7 @@ pub struct NewCmd {
 }
 
 impl NewCmd {
-    pub async fn insert<'a>(&self, executor: impl sqlx::sqlite::SqliteExecutor<'a>) -> Result<(), sqlx::Error> {
+    pub async fn insert<'a>(&self, executor: impl SqliteExecutor<'a>) -> Result<(), sqlx::Error> {
         sqlx::query!(
             "insert into cmds (shortcut, expansion, created_by) values ($1, $2, $3)",
             self.shortcut,
@@ -34,7 +35,7 @@ pub struct Cmd {
 impl Cmd {
     pub async fn last_by_shortcut<'a>(
         shortcut: &str,
-        executor: impl sqlx::sqlite::SqliteExecutor<'a>,
+        executor: impl SqliteExecutor<'a>,
     ) -> Result<Option<Self>, sqlx::Error> {
         sqlx::query_as!(
             Self,
