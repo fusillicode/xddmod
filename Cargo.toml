@@ -1,7 +1,7 @@
 [package]
 name = "xddmod"
 version = "0.1.0"
-authors = ["Gian Lu <fusillicode@gmail.com>"]
+authors = ["Gian Lu"]
 edition = "2021"
 
 [dependencies]
@@ -18,3 +18,4 @@ tower = "0.4.13"
 twitch_oauth2 = { version = "0.11.1", features = ["client", "reqwest"] }
 twitch-irc = { version = "5.0.0", features = ["with-serde", "refreshing-token-native-tls"] }
 url = { version = "2.3.1", features = ["serde"] }
+webbrowser = "0.8.8"
