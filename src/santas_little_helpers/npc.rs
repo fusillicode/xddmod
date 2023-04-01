@@ -15,6 +15,9 @@ pub struct Npc {
 impl Npc {
     pub async fn let_me_cook(&self, server_message: &ServerMessage) {
         if let ServerMessage::Privmsg(message) = server_message {
+            if message.is_action {
+                return;
+            }
             let is_mention = message.message_text.to_lowercase().contains(&self.you);
             for reply in Reply::all(&message.channel_login, &self.db_pool).await.unwrap() {
                 if is_mention != reply.to_mention {
