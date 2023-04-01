@@ -5,6 +5,9 @@ use std::time::Duration;
 use axum::async_trait;
 use axum::extract::Query;
 use axum::extract::State;
+use axum::response::IntoResponse;
+use axum::response::Redirect;
+use axum::response::Response;
 use axum::routing::get;
 use axum::Router;
 use config::Config;
@@ -12,22 +15,24 @@ use config::Environment;
 use serde::Deserialize;
 use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::sync::Mutex;
+use twitch_api2::twitch_oauth2::tokens::UserTokenBuilder;
+use twitch_api2::twitch_oauth2::ClientId;
+use twitch_api2::twitch_oauth2::ClientSecret;
+use twitch_api2::twitch_oauth2::Scope;
+use twitch_api2::twitch_oauth2::TwitchToken;
 use twitch_irc::login::GetAccessTokenResponse;
 use twitch_irc::login::RefreshingLoginCredentials;
 use twitch_irc::login::TokenStorage;
 use twitch_irc::login::UserAccessToken;
 use twitch_irc::message::ServerMessage;
+use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
-use twitch_oauth2::tokens::UserTokenBuilder;
-use twitch_oauth2::TwitchToken;
 use url::Url;
 
-pub async fn authenticate(
-    app_config: AppConfig,
-) -> (
-    UnboundedReceiver<ServerMessage>,
-    TwitchIRCClient<twitch_irc::SecureTCPTransport, RefreshingLoginCredentials<InMemoryTokenStorage>>,
-) {
+pub type MessageReceiver = UnboundedReceiver<ServerMessage>;
+pub type IRCClient = TwitchIRCClient<SecureTCPTransport, RefreshingLoginCredentials<InMemoryTokenStorage>>;
+
+pub async fn authenticate<'a>(app_config: AppConfig) -> (MessageReceiver, IRCClient, impl TwitchToken) {
     let auth_callback_url = {
         let mut x = app_config.server_url.clone();
         x.set_path("auth");
@@ -39,7 +44,7 @@ pub async fn authenticate(
         app_config.client_secret.clone(),
         auth_callback_url,
     )
-    .set_scopes(vec![twitch_oauth2::Scope::ChatRead, twitch_oauth2::Scope::ChatEdit]);
+    .set_scopes(vec![Scope::ChatRead, Scope::ChatEdit]);
 
     let (auth_url, _) = user_token_builder.generate_url();
 
@@ -84,20 +89,25 @@ pub async fn authenticate(
     let custom_token_storage = InMemoryTokenStorage(get_access_token_response.into());
 
     let credentials = RefreshingLoginCredentials::init(
-        app_config.client_id.clone(),
-        app_config.client_secret.clone(),
+        app_config.client_id.to_string(),
+        app_config.client_secret.secret().to_string(),
         custom_token_storage,
     );
 
     let client_config = twitch_irc::ClientConfig::new_simple(credentials);
-    TwitchIRCClient::<twitch_irc::SecureTCPTransport, RefreshingLoginCredentials<InMemoryTokenStorage>>::new(
-        client_config,
-    )
+    let (messages_receiver, irc_client) =
+        TwitchIRCClient::<SecureTCPTransport, RefreshingLoginCredentials<InMemoryTokenStorage>>::new(client_config);
+
+    (messages_receiver, irc_client, user_token)
 }
 
-async fn auth_callback(State(app_state): State<Arc<AppState>>, Query(auth_response_step_1): Query<AuthResponseStep1>) {
+async fn auth_callback(
+    State(app_state): State<Arc<AppState>>,
+    Query(auth_response_step_1): Query<AuthResponseStep1>,
+) -> Response {
     let mut guard = app_state.auth_response_step_1.lock().await;
     *guard = Some(auth_response_step_1.clone());
+    Redirect::to("https://cdn.7tv.app/emote/63bb3450799f5d0ce4b80686/4x.webp").into_response()
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -105,8 +115,8 @@ pub struct AppConfig {
     pub socket_addr: SocketAddr,
     pub server_url: Url,
     pub database_url: Url,
-    pub client_id: String,
-    pub client_secret: String,
+    pub client_id: ClientId,
+    pub client_secret: ClientSecret,
 }
 
 impl AppConfig {

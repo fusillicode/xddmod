@@ -2,10 +2,10 @@ use sqlx::SqlitePool;
 
 mod auth;
 mod persistence;
+mod santas_little_helpers;
 
 use crate::auth::AppConfig;
-use crate::persistence::Cmd;
-use crate::persistence::NewCmd;
+use crate::santas_little_helpers::npc::Npc;
 
 #[tokio::main]
 async fn main() {
@@ -16,76 +16,27 @@ async fn main() {
         .split(',')
         .map(String::from)
         .collect::<Vec<String>>();
-    let you = std::env::args().nth(2).unwrap();
+    let you = std::env::args().nth(2).unwrap().to_lowercase();
 
     let db_pool = SqlitePool::connect(app_config.database_url.as_ref()).await.unwrap();
     sqlx::migrate!().run(&db_pool).await.unwrap();
 
-    let (mut incoming_messages, client) = auth::authenticate(app_config.clone()).await;
+    let (mut incoming_messages, irc_client, _token) = auth::authenticate(app_config.clone()).await;
 
     for channel in channels {
-        client.join(channel).unwrap();
+        irc_client.join(channel).unwrap();
     }
+
+    let npc = Npc {
+        you,
+        irc_client,
+        db_pool,
+    };
 
     #[allow(clippy::single_match)]
     tokio::spawn(async move {
-        while let Some(message) = incoming_messages.recv().await {
-            match message {
-                twitch_irc::message::ServerMessage::Privmsg(message) => {
-                    if message.message_text.to_lowercase().contains(&you) {
-                        if message.message_text.to_lowercase().contains("gigachad")
-                            || message.message_text.to_lowercase().contains("best mod")
-                            || message.message_text.to_lowercase().contains("<3")
-                        {
-                            if let Some(cmd) = Cmd::last_by_shortcut("!nah", &db_pool).await.unwrap() {
-                                client.say_in_reply_to(&message, cmd.expansion).await.unwrap();
-                            }
-                            continue;
-                        }
-
-                        if message.message_text.to_lowercase().contains("thank you")
-                            || message.message_text.to_lowercase().contains("thnx")
-                        {
-                            if let Some(cmd) = Cmd::last_by_shortcut("!np", &db_pool).await.unwrap() {
-                                client.say_in_reply_to(&message, cmd.expansion).await.unwrap();
-                            }
-                            continue;
-                        }
-                    }
-
-                    if !message.message_text.starts_with('!') {
-                        continue;
-                    }
-
-                    match message.message_text.split_once(' ') {
-                        Some((shortcut, expansion)) => {
-                            dbg!(&message);
-                            if !message
-                                .badges
-                                .iter()
-                                .any(|x| x.name == "moderator" || x.name == "admin" || x.name == "broadcaster")
-                            {
-                                continue;
-                            }
-                            NewCmd {
-                                shortcut: shortcut.into(),
-                                expansion: expansion.into(),
-                                created_by: message.sender.login,
-                            }
-                            .insert(&db_pool)
-                            .await
-                            .unwrap();
-                        }
-                        None => {
-                            if let Some(cmd) = Cmd::last_by_shortcut(&message.message_text, &db_pool).await.unwrap() {
-                                client.say_in_reply_to(&message, cmd.expansion).await.unwrap();
-                            }
-                        }
-                    }
-                }
-
-                _ => {}
-            }
+        while let Some(server_message) = incoming_messages.recv().await {
+            npc.let_me_cook(&server_message).await
         }
     })
     .await

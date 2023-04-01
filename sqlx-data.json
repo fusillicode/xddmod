@@ -1,36 +1,36 @@
 {
   "db": "SQLite",
-  "2b330f4585c11d1758ab918b3de0c8b0b9eb3ceab613f9d3c4f3ebcc2516e50b": {
+  "1d950522c25b6ea86263eb1b6cb80ba3da5cb9087a3d7558f8c63eca4223dca4": {
     "describe": {
       "columns": [
         {
-          "name": "id",
+          "name": "name!",
           "ordinal": 0,
-          "type_info": "Int64"
+          "type_info": "Text"
         },
         {
-          "name": "shortcut",
+          "name": "caster!",
           "ordinal": 1,
           "type_info": "Text"
         },
         {
-          "name": "expansion",
+          "name": "timezone",
           "ordinal": 2,
           "type_info": "Text"
         },
         {
-          "name": "created_by",
+          "name": "created_at!: DateTime<Utc>",
           "ordinal": 3,
-          "type_info": "Text"
+          "type_info": "Null"
         },
         {
-          "name": "created_at!: DateTime<Utc>",
+          "name": "updated_at!: DateTime<Utc>",
           "ordinal": 4,
           "type_info": "Null"
         }
       ],
       "nullable": [
-        false,
+        true,
         false,
         false,
         false,
@@ -40,16 +40,78 @@
         "Right": 1
       }
     },
-    "query": "\n                select id, shortcut, expansion, created_by, created_at as \"created_at!: DateTime<Utc>\"\n                from cmds\n                where shortcut = $1\n                order by id desc\n            "
+    "query": "\n                select\n                    name as \"name!\",\n                    caster as \"caster!\",\n                    timezone,\n                    created_at as \"created_at!: DateTime<Utc>\",\n                    updated_at as \"updated_at!: DateTime<Utc>\"\n                from channels\n                where name = $1\n            "
   },
-  "d9bd01a8aa26703522ceed3aa780c16885aa49f31550c9cb7b24cd61055d5863": {
+  "8337cd2e79c5e3adb7cba680ff82b2fcbf7bc6f60729f5a3aa9fe7c70ac6b3a0": {
     "describe": {
-      "columns": [],
-      "nullable": [],
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "pattern",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "case_insensitive",
+          "ordinal": 2,
+          "type_info": "Bool"
+        },
+        {
+          "name": "expansion",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "to_mention",
+          "ordinal": 4,
+          "type_info": "Bool"
+        },
+        {
+          "name": "channel",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "enabled",
+          "ordinal": 6,
+          "type_info": "Bool"
+        },
+        {
+          "name": "created_by",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "created_at!: DateTime<Utc>",
+          "ordinal": 8,
+          "type_info": "Null"
+        },
+        {
+          "name": "updated_at!: DateTime<Utc>",
+          "ordinal": 9,
+          "type_info": "Null"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
       "parameters": {
-        "Right": 3
+        "Right": 1
       }
     },
-    "query": "insert into cmds (shortcut, expansion, created_by) values ($1, $2, $3)"
+    "query": "\n                select\n                    id,\n                    pattern,\n                    case_insensitive,\n                    expansion,\n                    to_mention,\n                    channel,\n                    enabled,\n                    created_by,\n                    created_at as \"created_at!: DateTime<Utc>\",\n                    updated_at as \"updated_at!: DateTime<Utc>\"\n                from replies\n                where enabled = 1 and (channel is null or channel = $1)\n                order by id desc\n            "
   }
 }
