@@ -1,6 +1,7 @@
 use regex::RegexBuilder;
 use sqlx::types::chrono::Utc;
 use sqlx::SqlitePool;
+use twitch_irc::message::PrivmsgMessage;
 use twitch_irc::message::ServerMessage;
 
 use crate::auth::IRCClient;
@@ -14,10 +15,7 @@ pub struct Npc {
 
 impl Npc {
     pub async fn let_me_cook(&self, server_message: &ServerMessage) {
-        if let ServerMessage::Privmsg(message) = server_message {
-            if message.is_action {
-                return;
-            }
+        if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
             let is_mention = message.message_text.to_lowercase().contains(&self.you);
             for reply in Reply::all(&message.channel_login, &self.db_pool).await.unwrap() {
                 if is_mention != reply.to_mention {
