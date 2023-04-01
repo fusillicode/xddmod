@@ -1,6 +1,6 @@
 {
   "db": "SQLite",
-  "1d950522c25b6ea86263eb1b6cb80ba3da5cb9087a3d7558f8c63eca4223dca4": {
+  "284496f3b3bda769f9128a072c645eef2c1adb4a9c4fe5be52592a31d7ab2298": {
     "describe": {
       "columns": [
         {
@@ -14,24 +14,30 @@
           "type_info": "Text"
         },
         {
-          "name": "timezone",
+          "name": "emotes_7tv_id",
           "ordinal": 2,
           "type_info": "Text"
         },
         {
-          "name": "created_at!: DateTime<Utc>",
+          "name": "timezone",
           "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "created_at!: DateTime<Utc>",
+          "ordinal": 4,
           "type_info": "Null"
         },
         {
           "name": "updated_at!: DateTime<Utc>",
-          "ordinal": 4,
+          "ordinal": 5,
           "type_info": "Null"
         }
       ],
       "nullable": [
         true,
         false,
+        true,
         false,
         false,
         false
@@ -40,7 +46,7 @@
         "Right": 1
       }
     },
-    "query": "\n                select\n                    name as \"name!\",\n                    caster as \"caster!\",\n                    timezone,\n                    created_at as \"created_at!: DateTime<Utc>\",\n                    updated_at as \"updated_at!: DateTime<Utc>\"\n                from channels\n                where name = $1\n            "
+    "query": "\n                select\n                    name as \"name!\",\n                    caster as \"caster!\",\n                    emotes_7tv_id,\n                    timezone,\n                    created_at as \"created_at!: DateTime<Utc>\",\n                    updated_at as \"updated_at!: DateTime<Utc>\"\n                from channels\n                where name = $1\n            "
   },
   "8337cd2e79c5e3adb7cba680ff82b2fcbf7bc6f60729f5a3aa9fe7c70ac6b3a0": {
     "describe": {

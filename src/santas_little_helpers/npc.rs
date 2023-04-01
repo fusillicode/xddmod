@@ -30,14 +30,18 @@ impl Npc {
                     Ok(re) if re.is_match(&message.message_text) => {
                         let reply_expansion =
                             if let Some(channel) = Channel::get(&message.channel_login, &self.db_pool).await.unwrap() {
-                                reply.expansion.replace("`CASTER`", &channel.caster).replace(
+                                let mut expansion = reply.expansion.replace("`CASTER`", &channel.caster).replace(
                                     "`NOW`",
                                     Utc::now()
                                         .with_timezone(&channel.timezone)
                                         .format("%I:%M %p")
                                         .to_string()
                                         .as_str(),
-                                )
+                                );
+                                if let Some(emotes_7tv_id) = channel.emotes_7tv_id {
+                                    expansion = expansion.replace("7TV_CHANNEL_ID", &emotes_7tv_id);
+                                }
+                                expansion
                             } else {
                                 reply.expansion
                             };

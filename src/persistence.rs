@@ -50,6 +50,7 @@ impl Reply {
 pub struct Channel {
     pub name: String,
     pub caster: String,
+    pub emotes_7tv_id: Option<String>,
     pub timezone: Tz,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -62,6 +63,7 @@ impl Channel {
                 select
                     name as "name!",
                     caster as "caster!",
+                    emotes_7tv_id,
                     timezone,
                     created_at as "created_at!: DateTime<Utc>",
                     updated_at as "updated_at!: DateTime<Utc>"
@@ -75,6 +77,7 @@ impl Channel {
         .map(|r| Self {
             name: r.name,
             caster: r.caster,
+            emotes_7tv_id: r.emotes_7tv_id,
             timezone: Tz::from_str(r.timezone.as_str()).unwrap(),
             created_at: r.created_at,
             updated_at: r.updated_at,
