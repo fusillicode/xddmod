@@ -1,0 +1,10 @@
+[package]
+name = "dank_content"
+version = "0.1.0"
+authors = ["Gian Lu"]
+edition = "2021"
+
+[dependencies]
+regex = "1.7.3"
+sqlx = { version = "0.6.2", features = ["runtime-tokio-native-tls", "uuid", "json", "chrono", "sqlite", "offline"] }
+tokio = { version = "1.25.0", features = ["full"] }

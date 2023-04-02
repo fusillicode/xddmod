@@ -37,7 +37,7 @@ impl Reply {
                     updated_at as "updated_at!: DateTime<Utc>"
                 from replies
                 where enabled = 1 and (channel is null or channel = $1)
-                order by id desc
+                order by id asc
             "#,
             channel
         )

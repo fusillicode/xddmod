@@ -1,4 +1,4 @@
 /target
 .env
 xddmod.db*
-seed.sql
+src/dank_content/src/main.rs

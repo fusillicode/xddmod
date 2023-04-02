@@ -37,13 +37,14 @@ impl Npc {
                                         .as_str(),
                                 );
                                 if let Some(emotes_7tv_id) = channel.emotes_7tv_id {
-                                    expansion = expansion.replace("7TV_CHANNEL_ID", &emotes_7tv_id);
+                                    expansion = expansion.replace("`7TV_CHANNEL_ID`", &emotes_7tv_id);
                                 }
                                 expansion
                             } else {
                                 reply.expansion
                             };
 
+                        dbg!(&message, &reply_expansion);
                         self.irc_client.say_in_reply_to(message, reply_expansion).await.unwrap();
                         break;
                     }
@@ -57,4 +58,3 @@ impl Npc {
         }
     }
 }
-

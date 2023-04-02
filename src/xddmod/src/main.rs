@@ -1,11 +1,11 @@
 use sqlx::SqlitePool;
 
 mod auth;
+mod cooks;
 mod persistence;
-mod santas_little_helpers;
 
 use crate::auth::AppConfig;
-use crate::santas_little_helpers::npc::Npc;
+use crate::cooks::npc::Npc;
 
 #[tokio::main]
 async fn main() {
@@ -19,7 +19,6 @@ async fn main() {
     let you = std::env::args().nth(2).unwrap().to_lowercase();
 
     let db_pool = SqlitePool::connect(app_config.database_url.as_ref()).await.unwrap();
-    sqlx::migrate!().run(&db_pool).await.unwrap();
 
     let (mut incoming_messages, irc_client, _token) = auth::authenticate(app_config.clone()).await;
 
