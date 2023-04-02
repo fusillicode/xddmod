@@ -58,7 +58,7 @@ pub async fn authenticate<'a>(app_config: AppConfig) -> (MessageReceiver, IRCCli
         .route("/auth", get(auth_callback))
         .with_state(app_state.clone());
 
-    tokio::spawn(async move {
+    let auth_server = tokio::spawn(async move {
         axum::Server::bind(&app_config.socket_addr)
             .serve(app.into_make_service())
             .await
@@ -71,6 +71,9 @@ pub async fn authenticate<'a>(app_config: AppConfig) -> (MessageReceiver, IRCCli
         }
         tokio::time::sleep(Duration::from_secs(2)).await;
     }
+
+    auth_server.abort();
+    auth_server.await.unwrap_err().is_cancelled();
 
     let AuthResponseStep1 { code, state } = app_state.auth_response_step_1.lock().await.clone().unwrap();
     let client = reqwest::Client::new();
