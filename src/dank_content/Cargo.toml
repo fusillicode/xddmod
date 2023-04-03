@@ -7,4 +7,4 @@ edition = "2021"
 [dependencies]
 regex = "1.7.3"
 sqlx = { version = "0.6.3", features = ["runtime-tokio-native-tls", "uuid", "json", "chrono", "sqlite", "offline"] }
-tokio = { version = "1.26.0", features = ["full"] }
+tokio = { version = "1.27.0", features = ["full"] }
