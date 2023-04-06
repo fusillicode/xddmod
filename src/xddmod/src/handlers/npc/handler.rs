@@ -25,7 +25,8 @@ impl Npc {
                     .say_in_reply_to(message, reply.expand_with(&channel))
                     .await
                     .unwrap(),
-                [] => println!("No matching replies for message: {:?}.", server_message),
+                // TODO: when we'll have `tracing` properly set up this should be a trace `warn`
+                [] => {}
                 multiple_matchin_replies => println!(
                     "Multiple matching replies for message: {:?}, {:?}.",
                     multiple_matchin_replies, server_message
