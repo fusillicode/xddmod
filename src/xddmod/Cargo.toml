@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["Gian Lu"]
 edition = "2021"
 
+[lib]
+name = "xddmod"
+path = "src/lib.rs"
+
 [dependencies]
 anyhow = "1.0.70"
 axum = "0.6.12"

@@ -1,6 +1,6 @@
 {
   "db": "SQLite",
-  "284496f3b3bda769f9128a072c645eef2c1adb4a9c4fe5be52592a31d7ab2298": {
+  "2bb900daacc1c9a1594fcc8516a0a5ab0345f609952e842db014e8cf7e948ee7": {
     "describe": {
       "columns": [
         {
@@ -14,9 +14,9 @@
           "type_info": "Text"
         },
         {
-          "name": "emotes_7tv_id",
+          "name": "date_of_birth: NaiveDate",
           "ordinal": 2,
-          "type_info": "Text"
+          "type_info": "Date"
         },
         {
           "name": "timezone",
@@ -24,13 +24,18 @@
           "type_info": "Text"
         },
         {
-          "name": "created_at!: DateTime<Utc>",
+          "name": "seven_tv_id",
           "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "created_at!: DateTime<Utc>",
+          "ordinal": 5,
           "type_info": "Null"
         },
         {
           "name": "updated_at!: DateTime<Utc>",
-          "ordinal": 5,
+          "ordinal": 6,
           "type_info": "Null"
         }
       ],
@@ -39,6 +44,7 @@
         false,
         true,
         false,
+        true,
         false,
         false
       ],
@@ -46,9 +52,9 @@
         "Right": 1
       }
     },
-    "query": "\n                select\n                    name as \"name!\",\n                    caster as \"caster!\",\n                    emotes_7tv_id,\n                    timezone,\n                    created_at as \"created_at!: DateTime<Utc>\",\n                    updated_at as \"updated_at!: DateTime<Utc>\"\n                from channels\n                where name = $1\n            "
+    "query": "\n                select\n                    name as \"name!\",\n                    caster as \"caster!\",\n                    date_of_birth as \"date_of_birth: NaiveDate\",\n                    timezone,\n                    seven_tv_id,\n                    created_at as \"created_at!: DateTime<Utc>\",\n                    updated_at as \"updated_at!: DateTime<Utc>\"\n                from channels\n                where name = $1\n            "
   },
-  "8337cd2e79c5e3adb7cba680ff82b2fcbf7bc6f60729f5a3aa9fe7c70ac6b3a0": {
+  "a8a530b7fe6fd1c5060bcca7343481eb4bd1ced4cab75908c193253f9750bc2d": {
     "describe": {
       "columns": [
         {
@@ -118,6 +124,6 @@
         "Right": 1
       }
     },
-    "query": "\n                select\n                    id,\n                    pattern,\n                    case_insensitive,\n                    expansion,\n                    to_mention,\n                    channel,\n                    enabled,\n                    created_by,\n                    created_at as \"created_at!: DateTime<Utc>\",\n                    updated_at as \"updated_at!: DateTime<Utc>\"\n                from replies\n                where enabled = 1 and (channel is null or channel = $1)\n                order by id desc\n            "
+    "query": "\n                select\n                    id,\n                    pattern,\n                    case_insensitive,\n                    expansion,\n                    to_mention,\n                    channel,\n                    enabled,\n                    created_by,\n                    created_at as \"created_at!: DateTime<Utc>\",\n                    updated_at as \"updated_at!: DateTime<Utc>\"\n                from npc_replies\n                where enabled = 1 and (channel is null or channel = $1)\n                order by id asc\n            "
   }
 }

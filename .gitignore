@@ -1,4 +1,4 @@
 /target
 .env
 xddmod.db*
-src/dank_content/src/main.rs
+.DS_Store

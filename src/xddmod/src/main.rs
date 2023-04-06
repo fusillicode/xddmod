@@ -1,11 +1,7 @@
 use sqlx::SqlitePool;
-
-mod auth;
-mod cooks;
-mod persistence;
-
-use crate::auth::AppConfig;
-use crate::cooks::npc::Npc;
+use xddmod::auth;
+use xddmod::auth::AppConfig;
+use xddmod::handlers::npc::handler::Npc;
 
 #[tokio::main]
 async fn main() {
@@ -35,7 +31,7 @@ async fn main() {
     #[allow(clippy::single_match)]
     tokio::spawn(async move {
         while let Some(server_message) = incoming_messages.recv().await {
-            npc.let_me_cook(&server_message).await
+            npc.handle(&server_message).await
         }
     })
     .await

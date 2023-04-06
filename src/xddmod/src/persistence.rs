@@ -3,55 +3,16 @@ use std::str::FromStr;
 use chrono_tz::Tz;
 use sqlx::sqlite::SqliteExecutor;
 use sqlx::types::chrono::DateTime;
+use sqlx::types::chrono::NaiveDate;
 use sqlx::types::chrono::Utc;
-
-#[derive(Debug)]
-pub struct Reply {
-    pub id: i64,
-    pub pattern: String,
-    pub case_insensitive: bool,
-    pub expansion: String,
-    pub to_mention: bool,
-    pub channel: Option<String>,
-    pub enabled: bool,
-    pub created_by: String,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-}
-
-impl Reply {
-    pub async fn all<'a>(channel: &str, executor: impl SqliteExecutor<'a>) -> Result<Vec<Self>, sqlx::Error> {
-        sqlx::query_as!(
-            Self,
-            r#"
-                select
-                    id,
-                    pattern,
-                    case_insensitive,
-                    expansion,
-                    to_mention,
-                    channel,
-                    enabled,
-                    created_by,
-                    created_at as "created_at!: DateTime<Utc>",
-                    updated_at as "updated_at!: DateTime<Utc>"
-                from replies
-                where enabled = 1 and (channel is null or channel = $1)
-                order by id asc
-            "#,
-            channel
-        )
-        .fetch_all(executor)
-        .await
-    }
-}
 
 #[derive(Debug)]
 pub struct Channel {
     pub name: String,
     pub caster: String,
-    pub emotes_7tv_id: Option<String>,
+    pub date_of_birth: Option<NaiveDate>,
     pub timezone: Tz,
+    pub seven_tv_id: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -63,8 +24,9 @@ impl Channel {
                 select
                     name as "name!",
                     caster as "caster!",
-                    emotes_7tv_id,
+                    date_of_birth as "date_of_birth: NaiveDate",
                     timezone,
+                    seven_tv_id,
                     created_at as "created_at!: DateTime<Utc>",
                     updated_at as "updated_at!: DateTime<Utc>"
                 from channels
@@ -77,8 +39,9 @@ impl Channel {
         .map(|r| Self {
             name: r.name,
             caster: r.caster,
-            emotes_7tv_id: r.emotes_7tv_id,
+            date_of_birth: r.date_of_birth,
             timezone: Tz::from_str(r.timezone.as_str()).unwrap(),
+            seven_tv_id: r.seven_tv_id,
             created_at: r.created_at,
             updated_at: r.updated_at,
         }))
