@@ -1,0 +1,3 @@
+[submodule "src/dankcontent"]
+	path = src/dankcontent
+	url = git@github.com:fusillicode/dankcontent.git

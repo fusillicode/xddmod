@@ -52,7 +52,7 @@ impl NpcReply {
 
     pub fn expand_with(&self, channel: &Option<Channel>) -> String {
         if let Some(channel) = channel {
-            let expansion = self.expansion.replace("`CASTER`", &channel.caster).replace(
+            let mut expansion = self.expansion.replace("`CASTER`", &channel.caster).replace(
                 "`NOW`",
                 Utc::now()
                     .with_timezone(&channel.timezone)
@@ -60,6 +60,9 @@ impl NpcReply {
                     .to_string()
                     .as_str(),
             );
+            if let Some(emotes_7tv_id) = channel.seven_tv_id.as_ref() {
+                expansion = expansion.replace("`SEVEN_TV_ID`", emotes_7tv_id);
+            }
             expansion
         } else {
             self.expansion.clone()

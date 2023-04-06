@@ -386,6 +386,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "dankcontent"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+ "xddmod 0.1.0 (git+https://github.com/fusillicode/xddmod.git)",
+]
+
+[[package]]
 name = "digest"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2567,6 +2579,29 @@ dependencies = [
 [[package]]
 name = "xddmod"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "chrono-tz",
+ "config",
+ "hyper",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+ "tower",
+ "twitch-irc",
+ "twitch_api2",
+ "url",
+ "webbrowser",
+]
+
+[[package]]
+name = "xddmod"
+version = "0.1.0"
+source = "git+https://github.com/fusillicode/xddmod.git#822b614ecf2045e18d58e465a1ba5eae88cb95e3"
 dependencies = [
  "anyhow",
  "axum",
