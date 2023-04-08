@@ -51,7 +51,17 @@ impl Channel {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Timezone(pub Tz);
+pub struct Timezone(Tz);
+
+impl Timezone {
+    pub fn as_inner(&self) -> &Tz {
+        &self.0
+    }
+
+    pub fn into_inner(self) -> Tz {
+        self.0
+    }
+}
 
 impl FromStr for Timezone {
     type Err = anyhow::Error;

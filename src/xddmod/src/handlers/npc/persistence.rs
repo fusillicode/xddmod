@@ -55,7 +55,7 @@ impl NpcReply {
             let mut template = self.template.replace("`CASTER`", &channel.caster).replace(
                 "`NOW`",
                 Utc::now()
-                    .with_timezone(&channel.timezone.0)
+                    .with_timezone(channel.timezone.as_inner())
                     .format("%I:%M %p")
                     .to_string()
                     .as_str(),
