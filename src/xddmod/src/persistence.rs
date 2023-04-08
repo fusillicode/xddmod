@@ -54,6 +54,12 @@ impl Channel {
 pub struct Timezone(Tz);
 
 impl Timezone {
+    pub fn new(tz: Tz) -> Self {
+        Self(tz)
+    }
+}
+
+impl Timezone {
     pub fn as_inner(&self) -> &Tz {
         &self.0
     }
