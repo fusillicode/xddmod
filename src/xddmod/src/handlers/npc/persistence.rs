@@ -10,7 +10,7 @@ pub struct NpcReply {
     pub id: i64,
     pub pattern: String,
     pub case_insensitive: bool,
-    pub expansion: String,
+    pub template: String,
     pub to_mention: bool,
     pub channel: Option<String>,
     pub enabled: bool,
@@ -52,20 +52,20 @@ impl NpcReply {
 
     pub fn expand_with(&self, channel: &Option<Channel>) -> String {
         if let Some(channel) = channel {
-            let mut expansion = self.expansion.replace("`CASTER`", &channel.caster).replace(
+            let mut template = self.template.replace("`CASTER`", &channel.caster).replace(
                 "`NOW`",
                 Utc::now()
-                    .with_timezone(&channel.timezone)
+                    .with_timezone(channel.timezone.as_inner())
                     .format("%I:%M %p")
                     .to_string()
                     .as_str(),
             );
             if let Some(emotes_7tv_id) = channel.seven_tv_id.as_ref() {
-                expansion = expansion.replace("`SEVEN_TV_ID`", emotes_7tv_id);
+                template = template.replace("`SEVEN_TV_ID`", emotes_7tv_id);
             }
-            expansion
+            template
         } else {
-            self.expansion.clone()
+            self.template.clone()
         }
     }
 
@@ -77,7 +77,7 @@ impl NpcReply {
                     id,
                     pattern,
                     case_insensitive,
-                    expansion,
+                    template,
                     to_mention,
                     channel,
                     enabled,
