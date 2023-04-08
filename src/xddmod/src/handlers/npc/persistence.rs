@@ -1,3 +1,5 @@
+use minijinja::context;
+use minijinja::Environment;
 use regex::RegexBuilder;
 use sqlx::sqlite::SqliteExecutor;
 use sqlx::types::chrono::DateTime;
@@ -5,7 +7,7 @@ use sqlx::types::chrono::Utc;
 
 use crate::persistence::Channel;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct NpcReply {
     pub id: i64,
     pub pattern: String,
@@ -50,23 +52,17 @@ impl NpcReply {
             .collect()
     }
 
-    pub fn expand_with(&self, channel: &Option<Channel>) -> String {
-        if let Some(channel) = channel {
-            let mut template = self.template.replace("`CASTER`", &channel.caster).replace(
-                "`NOW`",
-                Utc::now()
-                    .with_timezone(channel.timezone.as_inner())
-                    .format("%I:%M %p")
-                    .to_string()
-                    .as_str(),
-            );
-            if let Some(emotes_7tv_id) = channel.seven_tv_id.as_ref() {
-                template = template.replace("`SEVEN_TV_ID`", emotes_7tv_id);
-            }
-            template
-        } else {
-            self.template.clone()
-        }
+    pub fn expand_with(&self, channel: Option<&Channel>) -> Result<String, minijinja::Error> {
+        let env = Environment::new();
+        let time_in_channel = channel.map(|c| {
+            Utc::now()
+                .with_timezone(c.timezone.as_inner())
+                .format("%I:%M %p")
+                .to_string()
+        });
+        let ctx = context! { channel, time_in_channel };
+        dbg!(&ctx);
+        env.render_str(&self.template, ctx)
     }
 
     async fn all<'a>(channel: &str, executor: impl SqliteExecutor<'a>) -> Result<Vec<Self>, sqlx::Error> {

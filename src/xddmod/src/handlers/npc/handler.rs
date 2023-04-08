@@ -20,11 +20,13 @@ impl Npc {
                 .await
                 .as_slice()
             {
-                [reply] => self
-                    .irc_client
-                    .say_in_reply_to(message, reply.expand_with(&channel))
-                    .await
-                    .unwrap(),
+                [reply] => match reply.expand_with(channel.as_ref()) {
+                    Ok(expaned_reply) if expaned_reply.is_empty() => {
+                        println!("Empty expanded reply template: {:?}", reply)
+                    }
+                    Ok(expaned_reply) => self.irc_client.say_in_reply_to(message, expaned_reply).await.unwrap(),
+                    Err(e) => println!("Error expanding reply template, error: {:?}, {:?}.", reply, e),
+                },
                 [] => {}
                 multiple_matchin_replies => println!(
                     "Multiple matching replies for message: {:?}, {:?}.",
