@@ -1,5 +1,15 @@
 {
   "db": "SQLite",
+  "0bb814d10a287949de64484a3a5c6016e4878ce6658ea805fd802036454df2e5": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 10
+      }
+    },
+    "query": "\n            insert into npc_replies (pattern, template, channel, to_mention, enabled, created_by) values\n            (\"^!twitter$\", $3, $2, 0, 1, $1),\n            (\"^!youtube$\", $4, $2, 0, 1, $1),\n            (\"^!clips$\", $5, $2, 0, 1, $1),\n            (\"^!vod(?:s)?(?:-)?(?:channel)?(?:s)?$\", $6, $2, 0, 1, $1),\n            (\"^!reddit$\", \"reddit.com/r/PedroPeepos\", $2, 0, 1, $1),\n            (\"^!discord$\", $7, $2, 0, 1, $1),\n            (\"^!instagram$\", $8, $2, 0, 1, $1),\n            (\"^!tiktok$\", $9, $2, 0, 1, $1),\n            (\"^!social(?:s)?$\", $10, $2, 0, 1, $1),\n            (\"(?:^!stream$|\\s*stream(?:ing)?\\s+(?:today|now)\\s*\\?.*)$\", \"YEP Caedrel should be streaming today. Follow twitter.com/caedrelupdates for more updates\", $2, 0, 1, $1),\n            (\"(?:^!cast$|\\s*cast(?:ing)?\\s+(?:lec\\s+)?today(?:\\?)?|\\s*lec\\s+(?:on\\+s)?today(?:\\?)?|\\s*lec\\s+on(?:\\?)?)\", \"Caedrel will cast FNC vs AST on Saturday (8th April), and KOI vs G2 on Sunday (9th April). You can find LEC schedule here lolesports.com/schedule?leagues=lec\", $2, 0, 1, $1),\n            (\"^!end(?:ing)?(?:-)?song$\", \"okaywill - Chicken Dinner: youtube.com/watch?v=B_rAI7zaVZU\", $2, 0, 1, $1),\n            (\"^!(?:nord)?(?:-)?vpn$\", \"Get NordVPN here nordvpn.com/caedrel, 30-day money-back guarantee with coupon code 'Caedrel' upon checkout\", $2, 0, 1, $1),\n\n            (\".*(?:\\s+)?(?:caedALLO|peepoSitHey|good\\s+morning)(:?\\s+)?.*\", \"caedALLO caedH\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:thanks|thank\\s+you|thnx|ty)(?:\\s+)?.*$\", \"ok\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:GIGACHAD|best\\s+mod|good\\s+mod|PETTHEMODS|<3|heart)(?:\\s+)?.*\", \"caedH\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:bye)(?:\\s+)?.*\", \"bye\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:Pog|PogU|POGGIES|POGGERS|caedPog)(?:\\s+)?.*\", \"xddFlush\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:xdd.*)(?:\\s+)?.*\", \"widexddL\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:Aware|TrollAware|TrollDespair|Despairge|xddDespair)(?:\\s+)?.*\", \"Aware Despairge\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:DonoWall)(?:\\s+)?.*\", \"classic DonoWall Despair\", $2, 1, 0, $1);\n        "
+  },
   "2bb900daacc1c9a1594fcc8516a0a5ab0345f609952e842db014e8cf7e948ee7": {
     "describe": {
       "columns": [
@@ -165,6 +175,7 @@
       }
     },
     "query": "\n                select\n                    id,\n                    pattern,\n                    case_insensitive,\n                    template,\n                    to_mention,\n                    channel,\n                    enabled,\n                    created_by,\n                    created_at as \"created_at!: DateTime<Utc>\",\n                    updated_at as \"updated_at!: DateTime<Utc>\"\n                from npc_replies\n                where enabled = 1 and (channel is null or channel = $1)\n                order by id asc\n            "
+<<<<<<< HEAD
   },
   "c405261cf21360141415c06df29e2abdcbbc02c20b7865b51e6d2abb4e0e6611": {
     "describe": {
@@ -175,6 +186,8 @@
       }
     },
     "query": "\n            insert into npc_replies (pattern, template, channel, to_mention, enabled, created_by) values\n            (\"^!twitter$\", $3, $2, 0, 1, $1),\n            (\"^!youtube$\", $4, $2, 0, 1, $1),\n            (\"^!clips$\", $5, $2, 0, 1, $1),\n            (\"^!vod(?:s)?(?:-)?(?:channel)?(?:s)?$\", $6, $2, 0, 1, $1),\n            (\"^!reddit$\", \"reddit.com/r/PedroPeepos\", $2, 0, 1, $1),\n            (\"^!discord$\", $7, $2, 0, 1, $1),\n            (\"^!instagram$\", $8, $2, 0, 1, $1),\n            (\"^!tiktok$\", $9, $2, 0, 1, $1),\n            (\"^!social(?:s)?$\", $10, $2, 0, 1, $1),\n            (\"(?:^!stream$|\\s*stream(?:ing)?\\s+(?:today|now)\\s*\\?.*)$\", \"YEP Caedrel should be streaming today. Follow twitter.com/caedrelupdates for more updates\", $2, 0, 1, $1),\n            (\"(?:^!cast$|\\s*cast(?:ing)?\\s+(?:lec\\s+)?today(?:\\?)?|\\s*lec\\s+(?:on\\+s)?today(?:\\?)?|\\s*lec\\s+on(?:\\?)?)\", \"Caedrel will cast FNC vs AST on Saturday (8th April), and KOI vs G2 on Sunday (9th April). You can find LEC schedule here lolesports.com/schedule?leagues=lec\", $2, 0, 1, $1),\n            (\"^!end(?:ing)?(?:-)?song$\", \"okaywill - Chicken Dinner: youtube.com/watch?v=B_rAI7zaVZU\", $2, 0, 1, $1),\n            (\"^!(?:nord)?(?:-)?vpn$\", \"Get NordVPN here nordvpn.com/caedrel, 30-day money-back guarantee with coupon code 'Caedrel' upon checkout\", $2, 0, 1, $1),\n\n            (\".*(?:\\s+)?(?:caedALLO|peepoSitHey|good\\s+morning)(:?\\s+)?.*\", \"caedALLO\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:thanks|thank\\s+you|thnx|ty)(?:\\s+)?.*$\", \"ok\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:GIGACHAD|best\\s+mod|good\\s+mod|PETTHEMODS|<3|heart|love)(?:\\s+)?.*\", \"widexddL\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:bye)(?:\\s+)?.*\", \"bye\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:Pog|PogU|POGGIES|POGGERS|caedPog)(?:\\s+)?.*\", \"xddFlush\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:xdd.*)(?:\\s+)?.*\", \"widexddL\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:Aware|TrollAware|TrollDespair|Despairge|xddDespair)(?:\\s+)?.*\", \"Aware Despairge\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:DonoWall)(?:\\s+)?.*\", \"classic DonoWall Despair\", $2, 1, 0, $1);\n        "
+=======
+>>>>>>> 1ac730b (s/expansion/template)
   },
   "c5a502fdc7a5aa6060df3c55f0208d423f557a760077c0af47435bb2bd969cf3": {
     "describe": {
