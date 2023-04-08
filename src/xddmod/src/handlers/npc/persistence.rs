@@ -60,9 +60,7 @@ impl NpcReply {
                 .format("%I:%M %p")
                 .to_string()
         });
-        let ctx = context! { channel, time_in_channel };
-        dbg!(&ctx);
-        env.render_str(&self.template, ctx)
+        env.render_str(&self.template, context! { channel, time_in_channel })
     }
 
     async fn all<'a>(channel: &str, executor: impl SqliteExecutor<'a>) -> Result<Vec<Self>, sqlx::Error> {
