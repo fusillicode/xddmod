@@ -78,7 +78,7 @@ impl Serialize for Timezone {
     where
         S: Serializer,
     {
-        serializer.serialize_str(&self.0.to_string())
+        serializer.serialize_str(&self.as_inner().to_string())
     }
 }
 
