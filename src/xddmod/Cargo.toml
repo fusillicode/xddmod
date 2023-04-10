@@ -11,7 +11,7 @@ path = "src/lib.rs"
 [dependencies]
 anyhow = "1.0.70"
 axum = "0.6.12"
-chrono-tz = "0.8.1"
+chrono-tz = "0.8.2"
 config = "0.13.3"
 hyper = { version = "0.14.25", features = ["full"] }
 minijinja = "0.31.0"
