@@ -121,13 +121,7 @@ impl From<&Context> for minijinja::value::Value {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Timezone(Tz);
-
-impl Timezone {
-    pub fn new(tz: Tz) -> Self {
-        Self(tz)
-    }
-}
+pub struct Timezone(pub Tz);
 
 impl Timezone {
     pub fn as_inner(&self) -> &Tz {
@@ -206,8 +200,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use chrono_tz::Tz;
-
     use super::*;
 
     #[test]
@@ -224,7 +216,7 @@ mod tests {
     #[test]
     fn test_context_serde_json_round_trip() {
         let input = Context::Time {
-            timezone: Timezone::new(Tz::Europe__Berlin),
+            timezone: Timezone(Tz::Europe__Berlin),
             format: "foo".into(),
         };
         let ser = serde_json::to_string_pretty(&input).unwrap();
