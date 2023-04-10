@@ -4,7 +4,6 @@ use twitch_irc::message::ServerMessage;
 
 use crate::auth::IRCClient;
 use crate::handlers::npc::persistence::NpcReply;
-use crate::persistence::Channel;
 
 pub struct Npc {
     pub you: String,
@@ -15,12 +14,11 @@ pub struct Npc {
 impl Npc {
     pub async fn handle(&self, server_message: &ServerMessage) {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
-            let channel = Channel::get(&message.channel_login, &self.db_pool).await.unwrap();
             match NpcReply::matching(&self.you, &message.channel_login, &message.message_text, &self.db_pool)
                 .await
                 .as_slice()
             {
-                [reply] => match reply.expand_with(channel.as_ref()) {
+                [reply] => match reply.expand_template() {
                     Ok(expaned_reply) if expaned_reply.is_empty() => {
                         println!("Expanded reply template empty: {:?}", reply)
                     }
