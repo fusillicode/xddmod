@@ -20,6 +20,7 @@ use twitch_api2::twitch_oauth2::ClientId;
 use twitch_api2::twitch_oauth2::ClientSecret;
 use twitch_api2::twitch_oauth2::Scope;
 use twitch_api2::twitch_oauth2::TwitchToken;
+use twitch_api2::twitch_oauth2::UserToken;
 use twitch_irc::login::GetAccessTokenResponse;
 use twitch_irc::login::RefreshingLoginCredentials;
 use twitch_irc::login::TokenStorage;
@@ -32,7 +33,7 @@ use url::Url;
 pub type MessageReceiver = UnboundedReceiver<ServerMessage>;
 pub type IRCClient = TwitchIRCClient<SecureTCPTransport, RefreshingLoginCredentials<InMemoryTokenStorage>>;
 
-pub async fn authenticate<'a>(app_config: AppConfig) -> (MessageReceiver, IRCClient, impl TwitchToken) {
+pub async fn authenticate<'a>(app_config: AppConfig) -> (MessageReceiver, IRCClient, UserToken) {
     let auth_callback_url = {
         let mut x = app_config.server_url.clone();
         x.set_path("auth");
