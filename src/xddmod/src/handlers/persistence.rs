@@ -6,8 +6,9 @@ use sqlx::types::chrono::DateTime;
 use sqlx::types::chrono::Utc;
 
 #[derive(Debug, Clone)]
-pub struct NpcReply {
+pub struct Reply {
     pub id: i64,
+    pub handler: Option<Handler>,
     pub pattern: String,
     pub case_insensitive: bool,
     pub template: String,
@@ -19,16 +20,17 @@ pub struct NpcReply {
     pub updated_at: DateTime<Utc>,
 }
 
-impl NpcReply {
+impl Reply {
     pub async fn matching<'a>(
+        handler: Handler,
         you: &str,
         channel: &str,
         message_text: &str,
         executor: impl SqliteExecutor<'a>,
-    ) -> Vec<NpcReply> {
+    ) -> Vec<Reply> {
         let is_mention = message_text.to_lowercase().contains(you);
 
-        Self::all(channel, executor)
+        Self::all(handler, channel, executor)
             .await
             .unwrap()
             .into_iter()
@@ -54,12 +56,17 @@ impl NpcReply {
         template_env.render_str(&self.template, context!())
     }
 
-    async fn all<'a>(channel: &str, executor: impl SqliteExecutor<'a>) -> Result<Vec<Self>, sqlx::Error> {
+    async fn all<'a>(
+        handler: Handler,
+        channel: &str,
+        executor: impl SqliteExecutor<'a>,
+    ) -> Result<Vec<Self>, sqlx::Error> {
         sqlx::query_as!(
             Self,
             r#"
                 select
                     id,
+                    handler as "handler: Handler",
                     pattern,
                     case_insensitive,
                     template,
@@ -69,13 +76,21 @@ impl NpcReply {
                     created_by,
                     created_at as "created_at!: DateTime<Utc>",
                     updated_at as "updated_at!: DateTime<Utc>"
-                from npc_replies
-                where enabled = 1 and (channel is null or channel = $1)
+                from replies
+                where enabled = 1 and (channel is null or channel = $1) and (handler is null or handler = $2)
                 order by id asc
             "#,
-            channel
+            channel,
+            handler as _,
         )
         .fetch_all(executor)
         .await
     }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "TEXT")]
+pub enum Handler {
+    Npc,
+    Gamba,
 }
