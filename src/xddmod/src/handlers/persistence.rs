@@ -5,6 +5,8 @@ use sqlx::sqlite::SqliteExecutor;
 use sqlx::types::chrono::DateTime;
 use sqlx::types::chrono::Utc;
 
+use crate::handlers::gamba::handler::GambaContext;
+
 #[derive(Debug, Clone)]
 pub struct Reply {
     pub id: i64,
