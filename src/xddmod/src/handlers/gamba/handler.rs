@@ -20,11 +20,17 @@ pub struct Gamba<'a> {
 }
 
 impl<'a> Gamba<'a> {
+    pub fn handler(&self) -> Handler {
+        Handler::Gamba
+    }
+}
+
+impl<'a> Gamba<'a> {
     pub async fn handle(&self, server_message: &ServerMessage) {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
             match Reply::matching(
-                Handler::Gamba,
-                "foo",
+                self.handler(),
+                None,
                 &message.channel_login,
                 &message.message_text,
                 &self.db_pool,

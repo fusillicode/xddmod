@@ -23,19 +23,19 @@ pub struct Reply {
 impl Reply {
     pub async fn matching<'a>(
         handler: Handler,
-        you: &str,
+        you: Option<&str>,
         channel: &str,
         message_text: &str,
         executor: impl SqliteExecutor<'a>,
     ) -> Vec<Reply> {
-        let is_mention = message_text.to_lowercase().contains(you);
+        let is_mention = you.map(|y| message_text.to_lowercase().contains(y));
 
         Self::all(handler, channel, executor)
             .await
             .unwrap()
             .into_iter()
             .filter(|reply| {
-                if is_mention != reply.to_mention {
+                if is_mention.map(|x| x != reply.to_mention).unwrap_or(false) {
                     return false;
                 }
                 match RegexBuilder::new(&reply.pattern)

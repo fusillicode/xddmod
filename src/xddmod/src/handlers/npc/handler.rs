@@ -15,11 +15,17 @@ pub struct Npc<'a> {
 }
 
 impl<'a> Npc<'a> {
+    pub fn handler(&self) -> Handler {
+        Handler::Npc
+    }
+}
+
+impl<'a> Npc<'a> {
     pub async fn handle(&self, server_message: &ServerMessage) {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
             match Reply::matching(
-                Handler::Npc,
-                &self.you,
+                self.handler(),
+                Some(&self.you),
                 &message.channel_login,
                 &message.message_text,
                 &self.db_pool,
