@@ -17,6 +17,7 @@ use twitch_irc::message::PrivmsgMessage;
 use twitch_irc::message::ServerMessage;
 
 use crate::auth::IRCClient;
+use crate::handlers::persistence::Context;
 use crate::handlers::persistence::Handler;
 use crate::handlers::persistence::Reply;
 
@@ -62,7 +63,7 @@ impl<'a> Gamba<'a> {
 
                     match predictions.first() {
                         Some(prediction) => match GambaContext::try_from(prediction.clone()) {
-                            Ok(gamba) => match reply.expand_template() {
+                            Ok(gamba_context) => match reply.expand_template(Some(Context::Gamba(gamba_context))) {
                                 Ok(expaned_reply) if expaned_reply.is_empty() => {
                                     println!("Expanded reply template empty: {:?}", reply)
                                 }
@@ -90,6 +91,11 @@ impl<'a> Gamba<'a> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+// GAMBA "title" "side" vs "side" is UP. It started "time ago", you've "seconds" left to bet!
+// GAMBA "title" "side" vs "side" is close Sadge Has been open for "seconds" from "DD/MM HH:MM:SS (UTC)" to "DD/MM
+// HH:MM:SS (UTC)" GAMBA "title" "side" vs "side" resulted in "side" win. Has been open for "seconds" from "DD/MM
+// HH:MM:SS (UTC)" to "DD/MM HH:MM:SS (UTC)" GAMBA "title" "side" vs "side" has been refunded. Has been open for
+// "seconds" from "DD/MM HH:MM:SS (UTC)" to "DD/MM HH:MM:SS (UTC)"
 pub struct GambaContext {
     pub title: String,
     pub sides: Vec<Side>,
@@ -113,11 +119,12 @@ impl TryFrom<Prediction> for GambaContext {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(tag = "name")]
 pub enum GambaState {
-    Up,
+    Up { expected_closed_at: Timestamp },
     Closed { closed_at: Timestamp },
-    Payed { winner: Side },
-    Refunded,
+    Payed { winner: Side, closed_at: Timestamp },
+    Refunded { refunded_at: Timestamp },
 }
 
 impl TryFrom<Prediction> for GambaState {
@@ -146,10 +153,21 @@ impl TryFrom<Prediction> for GambaState {
                         )
                     })?;
 
-                Self::Payed { winner }
+                Self::Payed {
+                    winner,
+                    closed_at: x.locked_at.ok_or_else(|| anyhow!("FOO"))?,
+                }
             }
-            PredictionStatus::Active => Self::Up,
-            PredictionStatus::Canceled => Self::Refunded,
+            PredictionStatus::Active => {
+                let expected_closed_at =
+                    x.created_at.to_fixed_offset() + Duration::from_secs(x.prediction_window as u64);
+                Self::Up {
+                    expected_closed_at: Timestamp::try_from(expected_closed_at).unwrap(),
+                }
+            }
+            PredictionStatus::Canceled => Self::Refunded {
+                refunded_at: x.locked_at.ok_or_else(|| anyhow!("FOO"))?,
+            },
             PredictionStatus::Locked => Self::Closed {
                 closed_at: x
                     .clone()
@@ -177,5 +195,44 @@ impl From<PredictionOutcome> for Side {
             betted_channel_points: x.channel_points,
             color: x.color,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn name() {
+        let input = GambaContext {
+            title: "foo".into(),
+            sides: vec![
+                Side {
+                    title: "bar".into(),
+                    users: Some(42),
+                    betted_channel_points: Some(43),
+                    color: "BLUE".into(),
+                },
+                Side {
+                    title: "baz".into(),
+                    users: Some(44),
+                    betted_channel_points: Some(45),
+                    color: "PINK".into(),
+                },
+            ],
+            state: GambaState::Payed {
+                winner: Side {
+                    title: "bar".into(),
+                    users: Some(42),
+                    betted_channel_points: Some(43),
+                    color: "BLUE".into(),
+                },
+            },
+            window: Duration::from_secs(32),
+            started_at: Timestamp::now(),
+        };
+
+        dbg!(minijinja::value::Value::from_serializable(&input));
+        panic!("asd");
     }
 }
