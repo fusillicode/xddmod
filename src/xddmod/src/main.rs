@@ -24,10 +24,13 @@ async fn main() {
 
     irc_client.join(channel).unwrap();
 
+    let templates_env = xddmod::templates_env::build_global_templates_env();
+
     let npc = Npc {
         you,
         irc_client: irc_client.clone(),
         db_pool: db_pool.clone(),
+        templates_env: templates_env.clone(),
     };
     let gamba = Gamba {
         token: user_token,
@@ -35,7 +38,7 @@ async fn main() {
         helix_client,
         irc_client,
         db_pool,
-        templates_env: xddmod::templates_env::build_global_templates_env(),
+        templates_env,
     };
 
     #[allow(clippy::single_match)]

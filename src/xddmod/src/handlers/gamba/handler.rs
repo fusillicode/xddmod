@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use anyhow::anyhow;
 use anyhow::bail;
+use minijinja::Environment;
 use serde::Deserialize;
 use serde::Serialize;
 use sqlx::SqlitePool;
@@ -17,7 +18,6 @@ use twitch_irc::message::PrivmsgMessage;
 use twitch_irc::message::ServerMessage;
 
 use crate::auth::IRCClient;
-use crate::handlers::persistence::Context;
 use crate::handlers::persistence::Handler;
 use crate::handlers::persistence::Reply;
 
@@ -27,6 +27,7 @@ pub struct Gamba<'a> {
     pub helix_client: HelixClient<'a, reqwest::Client>,
     pub irc_client: IRCClient,
     pub db_pool: SqlitePool,
+    pub templates_env: Environment<'a>,
 }
 
 impl<'a> Gamba<'a> {
@@ -63,7 +64,7 @@ impl<'a> Gamba<'a> {
 
                     match predictions.first() {
                         Some(prediction) => match GambaContext::try_from(prediction.clone()) {
-                            Ok(gamba_context) => match reply.expand_template(Some(Context::Gamba(gamba_context))) {
+                            Ok(gamba_context) => match reply.render_template(&self.templates_env) {
                                 Ok(expaned_reply) if expaned_reply.is_empty() => {
                                     println!("Expanded reply template empty: {:?}", reply)
                                 }
@@ -198,41 +199,41 @@ impl From<PredictionOutcome> for Side {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
 
-    #[test]
-    fn name() {
-        let input = GambaContext {
-            title: "foo".into(),
-            sides: vec![
-                Side {
-                    title: "bar".into(),
-                    users: Some(42),
-                    betted_channel_points: Some(43),
-                    color: "BLUE".into(),
-                },
-                Side {
-                    title: "baz".into(),
-                    users: Some(44),
-                    betted_channel_points: Some(45),
-                    color: "PINK".into(),
-                },
-            ],
-            state: GambaState::Payed {
-                winner: Side {
-                    title: "bar".into(),
-                    users: Some(42),
-                    betted_channel_points: Some(43),
-                    color: "BLUE".into(),
-                },
-            },
-            window: Duration::from_secs(32),
-            started_at: Timestamp::now(),
-        };
+//     #[test]
+//     fn name() {
+//         let input = GambaContext {
+//             title: "foo".into(),
+//             sides: vec![
+//                 Side {
+//                     title: "bar".into(),
+//                     users: Some(42),
+//                     betted_channel_points: Some(43),
+//                     color: "BLUE".into(),
+//                 },
+//                 Side {
+//                     title: "baz".into(),
+//                     users: Some(44),
+//                     betted_channel_points: Some(45),
+//                     color: "PINK".into(),
+//                 },
+//             ],
+//             state: GambaState::Payed {
+//                 winner: Side {
+//                     title: "bar".into(),
+//                     users: Some(42),
+//                     betted_channel_points: Some(43),
+//                     color: "BLUE".into(),
+//                 },
+//             },
+//             window: Duration::from_secs(32),
+//             started_at: Timestamp::now(),
+//         };
 
-        dbg!(minijinja::value::Value::from_serializable(&input));
-        panic!("asd");
-    }
-}
+//         dbg!(minijinja::value::Value::from_serializable(&input));
+//         panic!("asd");
+//     }
+// }

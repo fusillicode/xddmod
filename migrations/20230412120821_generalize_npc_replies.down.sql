@@ -5,7 +5,6 @@ create table npc_replies(
   pattern text not null,
   case_insensitive boolean not null default 1,
   template text not null,
-  context json,
   to_mention boolean not null default 0,
   channel text,
   enabled boolean not null default false,
