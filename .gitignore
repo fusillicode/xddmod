@@ -1,4 +1,5 @@
-/target
-.env
-xddmod.db*
 .DS_Store
+.env
+*.db
+*.db-*
+target
