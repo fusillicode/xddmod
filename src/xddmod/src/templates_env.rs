@@ -13,7 +13,7 @@ pub fn build_global_templates_env<'a>() -> Environment<'a> {
     template_env
 }
 
-fn format_date_time(date_time: &str, format: &str, timezone: &str) -> Result<String, Error> {
+fn format_date_time(date_time: &str, timezone: &str, format: &str) -> Result<String, Error> {
     let timezone = Tz::from_str(timezone).map_err(|e| {
         Error::new(
             ErrorKind::MissingArgument,
