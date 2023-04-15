@@ -26,7 +26,7 @@ async fn main() {
         you,
         irc_client,
         db_pool,
-        templates_env: xddmod::build_global_templates_env(),
+        templates_env: xddmod::templates_env::build_global_templates_env(),
     };
 
     #[allow(clippy::single_match)]
