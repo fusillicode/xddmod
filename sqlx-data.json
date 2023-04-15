@@ -10,6 +10,16 @@
     },
     "query": "delete from npc_replies where created_by = $1"
   },
+  "a335c10b863c62831edce1c92103afcee93cd75ef6d6867d17f4242296bce25a": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 10
+      }
+    },
+    "query": "\n            insert into npc_replies (pattern, template, channel, to_mention, enabled, created_by) values\n            (\"^!twitter$\", $3, $2, 0, 1, $1),\n            (\"^!youtube$\", $4, $2, 0, 1, $1),\n            (\"^!clips$\", $5, $2, 0, 1, $1),\n            (\"^!vod(?:s)?(?:-)?(?:channel)?(?:s)?$\", $6, $2, 0, 1, $1),\n            (\"^!reddit$\", \"reddit.com/r/PedroPeepos\", $2, 0, 1, $1),\n            (\"^!discord$\", $7, $2, 0, 1, $1),\n            (\"^!instagram$\", $8, $2, 0, 1, $1),\n            (\"^!tiktok$\", $9, $2, 0, 1, $1),\n            (\"^!social(?:s)?$\", $10, $2, 0, 1, $1),\n            (\"(?:^!stream$|\\s*stream(?:ing)?\\s+(?:today|now)\\s*\\?.*)$\", \"No stream on Wednesday, Caedrel has EUphoria & Riot meetings. Stream should be back on Thursday. Follow twitter.com/caedrelupdates for more updates ok\", $2, 0, 1, $1),\n            (\"(?:^!cast$|^!lec$|\\s*cast(?:ing|in)?\\s+(?:lec\\s+)?(?:today|tonight)(?:\\?)?|\\s*lec\\s+(?:on\\+s)?(?:today|tonight)(?:\\?)?|\\s*lec\\s+on(?:\\?)?|\\s+at\\s+lec\\s+(?:today|tonight)(?:\\?)?)\", \"No LEC today Sadge LEC will be back the 15th, 16th and 17th of April. You can find LEC schedule here lolesports.com/schedule?leagues=lec\", $2, 0, 1, $1),\n            (\"^!end(?:ing)?(?:-)?song$\", \"okaywill - Chicken Dinner: youtube.com/watch?v=B_rAI7zaVZU\", $2, 0, 1, $1),\n            (\"^!(?:nord)?(?:-)?vpn$\", \"Get NordVPN here nordvpn.com/caedrel, 30-day money-back guarantee with coupon code 'Caedrel' upon checkout\", $2, 0, 1, $1),\n            (\"^!emote(?:s)?$\", \"To see emotes install 7TV 7tv.app. These are Caedrel's emotes: 7tv.app/users/61e2b8461f8f9d5cf63321a1\", $2, 0, 1, $1),\n            (\"^!(?:prime(?:(?:-)?sub(?:s)?)?|sub(?:s(?:cribe)?)?)$\", \"You can sub to Caedrel's channel and use your Twitch Prime here twitch.tv/subs/caedrel\", $2, 0, 1, $1),\n\n            (\"^!time$\", \"It's {{ format_date_time('now', '%I:%M %p', 'Europe/Berlin') }} in Caedrel's timezone\", $2, 0, 1, $1),\n\n            (\".*(?:\\s+)?(?:caedALLO|peepoSitHey|good\\s+morning)(:?\\s+)?.*\", \"caedALLO\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:thanks|thank\\s+you|thnx|ty)(?:\\s+)?.*$\", \"ok\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:GIGACHAD|best\\s+mod|good\\s+mod|PETTHEMODS|<3|heart|love)(?:\\s+)?.*\", \"widexddL\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:bye)(?:\\s+)?.*\", \"bye\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:Pog|PogU|POGGIES|POGGERS|caedPog)(?:\\s+)?.*\", \"xddFlush\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:xdd.*)(?:\\s+)?.*\", \"widexddL\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:Aware|TrollAware|TrollDespair|Despairge|xddDespair)(?:\\s+)?.*\", \"Aware Despairge\", $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:DonoWall)(?:\\s+)?.*\", \"classic DonoWall Despair\", $2, 1, 0, $1);\n        "
+  },
   "ae5cafb8a84aaf736868922d333fe0ec0567d3ba6c9803be65f31371e27edcb5": {
     "describe": {
       "columns": [],
@@ -20,17 +30,7 @@
     },
     "query": "\n            insert into npc_replies (pattern, template, to_mention, enabled, created_by) values\n            (\"^!patch(?:es)?$\", \"Current patches are 13.6 @ LEC, 13.5 @ LCK & LPL ok\", 0, 1, $1),\n            (\"^!msi$\", \"MSI 2023 will be in London and will start the 2nd of May, more info here lol.fandom.com/wiki/2023_Mid-Season_Invitational\", 0, 1, $1);\n        "
   },
-  "df9881bc92dafe4df15719f29ff2ee5cf0c6739dd25d79537210981b6cde0e6b": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Right": 11
-      }
-    },
-    "query": "\n            insert into npc_replies (pattern, template, context, channel, to_mention, enabled, created_by) values\n            (\"^!twitter$\", $3, null, $2, 0, 1, $1),\n            (\"^!youtube$\", $4, null, $2, 0, 1, $1),\n            (\"^!clips$\", $5, null, $2, 0, 1, $1),\n            (\"^!vod(?:s)?(?:-)?(?:channel)?(?:s)?$\", $6, null, $2, 0, 1, $1),\n            (\"^!reddit$\", \"reddit.com/r/PedroPeepos\", null, $2, 0, 1, $1),\n            (\"^!discord$\", $7, null, $2, 0, 1, $1),\n            (\"^!instagram$\", $8, null, $2, 0, 1, $1),\n            (\"^!tiktok$\", $9, null, $2, 0, 1, $1),\n            (\"^!social(?:s)?$\", $10, null, $2, 0, 1, $1),\n            (\"(?:^!stream$|\\s*stream(?:ing)?\\s+(?:today|now)\\s*\\?.*)$\", \"No stream on Wednesday, Caedrel has EUphoria & Riot meetings. Stream should be back on Thursday. Follow twitter.com/caedrelupdates for more updates ok\", null, $2, 0, 1, $1),\n            (\"(?:^!cast$|^!lec$|\\s*cast(?:ing|in)?\\s+(?:lec\\s+)?(?:today|tonight)(?:\\?)?|\\s*lec\\s+(?:on\\+s)?(?:today|tonight)(?:\\?)?|\\s*lec\\s+on(?:\\?)?|\\s+at\\s+lec\\s+(?:today|tonight)(?:\\?)?)\", \"No LEC today Sadge LEC will be back the 15th, 16th and 17th of April. You can find LEC schedule here lolesports.com/schedule?leagues=lec\", null, $2, 0, 1, $1),\n            (\"^!end(?:ing)?(?:-)?song$\", \"okaywill - Chicken Dinner: youtube.com/watch?v=B_rAI7zaVZU\", null, $2, 0, 1, $1),\n            (\"^!(?:nord)?(?:-)?vpn$\", \"Get NordVPN here nordvpn.com/caedrel, 30-day money-back guarantee with coupon code 'Caedrel' upon checkout\", null, $2, 0, 1, $1),\n            (\"^!emote(?:s)?$\", \"To see emotes install 7TV 7tv.app. These are Caedrel's emotes: 7tv.app/users/61e2b8461f8f9d5cf63321a1\", null, $2, 0, 1, $1),\n            (\"^!(?:prime(?:(?:-)?sub(?:s)?)?|sub(?:s(?:cribe)?)?)$\", \"You can sub to Caedrel's channel and use your Twitch Prime here twitch.tv/subs/caedrel\", null, $2, 0, 1, $1),\n\n            (\"^!time$\", \"It's {{ time_in_channel }} in Caedrel's timezone\", $11, $2, 0, 1, $1),\n\n            (\".*(?:\\s+)?(?:caedALLO|peepoSitHey|good\\s+morning)(:?\\s+)?.*\", \"caedALLO\", null, $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:thanks|thank\\s+you|thnx|ty)(?:\\s+)?.*$\", \"ok\", null, $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:GIGACHAD|best\\s+mod|good\\s+mod|PETTHEMODS|<3|heart|love)(?:\\s+)?.*\", \"widexddL\", null, $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:bye)(?:\\s+)?.*\", \"bye\", null, $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:Pog|PogU|POGGIES|POGGERS|caedPog)(?:\\s+)?.*\", \"xddFlush\", null, $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:xdd.*)(?:\\s+)?.*\", \"widexddL\", null, $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:Aware|TrollAware|TrollDespair|Despairge|xddDespair)(?:\\s+)?.*\", \"Aware Despairge\", null, $2, 1, 0, $1),\n            (\".*(?:\\s+)?(?:DonoWall)(?:\\s+)?.*\", \"classic DonoWall Despair\", null, $2, 1, 0, $1);\n        "
-  },
-  "f8504b17db3fb8293714c0508ddd62d7bc5d0dac20b0a91668f15d9280423c2e": {
+  "b25ce0464a18f3685e62f37d6c97399934f06987ed83a55bd6cbdff06737fa18": {
     "describe": {
       "columns": [
         {
@@ -54,38 +54,33 @@
           "type_info": "Text"
         },
         {
-          "name": "context: Json<Context>",
-          "ordinal": 4,
-          "type_info": "Null"
-        },
-        {
           "name": "to_mention",
-          "ordinal": 5,
+          "ordinal": 4,
           "type_info": "Bool"
         },
         {
           "name": "channel",
-          "ordinal": 6,
+          "ordinal": 5,
           "type_info": "Text"
         },
         {
           "name": "enabled",
-          "ordinal": 7,
+          "ordinal": 6,
           "type_info": "Bool"
         },
         {
           "name": "created_by",
-          "ordinal": 8,
+          "ordinal": 7,
           "type_info": "Text"
         },
         {
           "name": "created_at!: DateTime<Utc>",
-          "ordinal": 9,
+          "ordinal": 8,
           "type_info": "Null"
         },
         {
           "name": "updated_at!: DateTime<Utc>",
-          "ordinal": 10,
+          "ordinal": 9,
           "type_info": "Null"
         }
       ],
@@ -94,7 +89,6 @@
         false,
         false,
         false,
-        true,
         false,
         true,
         false,
@@ -106,6 +100,6 @@
         "Right": 1
       }
     },
-    "query": "\n                select\n                    id,\n                    pattern,\n                    case_insensitive,\n                    template,\n                    context as \"context: Json<Context>\",\n                    to_mention,\n                    channel,\n                    enabled,\n                    created_by,\n                    created_at as \"created_at!: DateTime<Utc>\",\n                    updated_at as \"updated_at!: DateTime<Utc>\"\n                from npc_replies\n                where enabled = 1 and (channel is null or channel = $1)\n                order by id asc\n            "
+    "query": "\n                select\n                    id,\n                    pattern,\n                    case_insensitive,\n                    template,\n                    to_mention,\n                    channel,\n                    enabled,\n                    created_by,\n                    created_at as \"created_at!: DateTime<Utc>\",\n                    updated_at as \"updated_at!: DateTime<Utc>\"\n                from npc_replies\n                where enabled = 1 and (channel is null or channel = $1)\n                order by id asc\n            "
   }
 }

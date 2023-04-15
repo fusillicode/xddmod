@@ -7,5 +7,3 @@ create table channels(
   created_at timestamptz not null default current_timestamp,
   updated_at timestamptz not null default current_timestamp
 );
-
-alter table npc_replies drop column context;
