@@ -1,6 +1,7 @@
 # xddmod
 
 [![Open Source Saturday](https://img.shields.io/badge/%E2%9D%A4%EF%B8%8F-open%20source%20saturday-F64060.svg)](https://www.meetup.com/it-IT/Open-Source-Saturday-Milano/)
+[![Top language](https://img.shields.io/github/languages/top/fusillicode/xddmod)](https://github.com/fusillicode/xddmod/issues)
 [![Commits](https://shields.io/github/last-commit/fusillicode/xddmod)](https://github.com/fusillicode/xddmod/commits/main)
 [![Issues](https://shields.io/github/issues/fusillicode/xddmod)](https://github.com/fusillicode/xddmod/issues)
 [![Closed issues](https://shields.io/github/issues-closed/fusillicode/xddmod)](https://github.com/fusillicode/xddmod/issues?q=is%3Aissue+is%3Aclosed)
