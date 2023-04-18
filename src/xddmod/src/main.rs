@@ -2,7 +2,7 @@ use sqlx::SqlitePool;
 use twitch_api2::HelixClient;
 use xddmod::auth;
 use xddmod::auth::AppConfig;
-use xddmod::handlers::gamba::handler::Gamba;
+use xddmod::handlers::gambage::handler::Gambage;
 use xddmod::handlers::npc::handler::Npc;
 
 #[tokio::main]
@@ -32,7 +32,7 @@ async fn main() {
         db_pool: db_pool.clone(),
         templates_env: templates_env.clone(),
     };
-    let gamba = Gamba {
+    let gambage = Gambage {
         token: user_token,
         broadcaster_id: broadcaster.id,
         helix_client,
@@ -45,7 +45,7 @@ async fn main() {
     tokio::spawn(async move {
         while let Some(server_message) = incoming_messages.recv().await {
             npc.handle(&server_message).await;
-            gamba.handle(&server_message).await;
+            gambage.handle(&server_message).await;
         }
     })
     .await

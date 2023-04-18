@@ -54,8 +54,16 @@ impl Reply {
             .collect()
     }
 
-    pub fn render_template(&self, template_env: &Environment) -> Result<String, minijinja::Error> {
-        template_env.render_str(&self.template, context!())
+    pub fn render_template<S: Serialize>(
+        &self,
+        template_env: &Environment,
+        ctx: Option<&S>,
+    ) -> Result<String, minijinja::Error> {
+        let ctx = match ctx {
+            Some(ctx) => minijinja::value::Value::from_serializable(ctx),
+            None => context!(),
+        };
+        template_env.render_str(&self.template, ctx)
     }
 
     async fn all<'a>(

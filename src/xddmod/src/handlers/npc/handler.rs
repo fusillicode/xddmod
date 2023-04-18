@@ -1,3 +1,4 @@
+use minijinja::value::Value;
 use minijinja::Environment;
 use sqlx::SqlitePool;
 use twitch_irc::message::PrivmsgMessage;
@@ -33,7 +34,7 @@ impl<'a> Npc<'a> {
             .await
             .as_slice()
             {
-                [reply] => match reply.render_template(&self.templates_env) {
+                [reply] => match reply.render_template::<Value>(&self.templates_env, None) {
                     Ok(expaned_reply) if expaned_reply.is_empty() => {
                         println!("Expanded reply template empty: {:?}", reply)
                     }

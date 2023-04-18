@@ -12,6 +12,7 @@ pub fn build_global_templates_env<'a>() -> Environment<'a> {
     let mut template_env = Environment::new();
     template_env.add_function("now", now);
     template_env.add_filter("format_date_time", format_date_time);
+    template_env.add_function("format_duration", format_duration);
 
     template_env
 }
@@ -47,6 +48,8 @@ fn parse_date_time_from_rfc3339(date_time: &str) -> Result<DateTime<FixedOffset>
 
 #[cfg(test)]
 mod tests {
+    use chrono::Duration;
+
     use super::*;
 
     #[test]
@@ -76,5 +79,25 @@ mod tests {
         );
         assert_eq!("foo", format_date_time("2023-04-16T07:52:13.735001Z", "foo").unwrap());
         assert!(format_date_time("foo", "%I:%M %p").is_err());
+    }
+
+    #[test]
+    fn test_format_duration_works_as_expected() {
+        let now = Utc::now();
+        let past = now - Duration::days(1);
+        let future = now + Duration::days(1);
+
+        assert_eq!(
+            "1 day",
+            format_duration(now.to_rfc3339().as_str(), now.to_rfc3339().as_str()).unwrap()
+        );
+        assert_eq!(
+            "1 day",
+            format_duration(past.to_rfc3339().as_str(), now.to_rfc3339().as_str()).unwrap()
+        );
+        assert_eq!(
+            "1 day",
+            format_duration(future.to_rfc3339().as_str(), now.to_rfc3339().as_str()).unwrap()
+        );
     }
 }
