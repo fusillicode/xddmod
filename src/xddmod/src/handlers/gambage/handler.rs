@@ -219,7 +219,7 @@ mod tests {
         // GAMBA "title" "side" vs "side" resulted in "side" "time ago"
         // GAMBA "title" "side" vs "side" has been refunded "time ago"
         // let template = r#"
-        //     GAMBA {{ gamba.title }} {{ gamba.sides|map(attribute='title')|join(' vs ') }}
+        //     GAMBA "{{ gamba.title }}" {{ gamba.sides|map(attribute='title')|join(' vs ') }}
         //     {% if gamba.state.name == "Up" %}
         //         is UP since {{ format_duration_till_now(gamba.started_at) }}, you've {{ seconds }} left to bet!
         //     {% elif gamba.state.name == "Closed" %}
@@ -230,42 +230,42 @@ mod tests {
         //         has been refunded {{ format_duration_till_now(gamba.refunded_at) }}
         //     {% endif %}
         // "#;
-        let template = "{{ ciccio(window) }}";
+        // let template = "{{ ciccio(window) }}";
 
-        let input = Gamba {
-            title: "foo".into(),
-            sides: vec![
-                Side {
-                    title: "bar".into(),
-                    users: Some(42),
-                    betted_channel_points: Some(43),
-                    color: "BLUE".into(),
-                },
-                Side {
-                    title: "baz".into(),
-                    users: Some(44),
-                    betted_channel_points: Some(45),
-                    color: "PINK".into(),
-                },
-            ],
-            state: GambaState::Payed {
-                winner: Side {
-                    title: "bar".into(),
-                    users: Some(42),
-                    betted_channel_points: Some(43),
-                    color: "BLUE".into(),
-                },
-                payed_at: Timestamp::now(),
-            },
-            window: Duration::from_secs(32),
-            started_at: Timestamp::now(),
-        };
+        // let input = Gamba {
+        //     title: "foo".into(),
+        //     sides: vec![
+        //         Side {
+        //             title: "bar".into(),
+        //             users: Some(42),
+        //             betted_channel_points: Some(43),
+        //             color: "BLUE".into(),
+        //         },
+        //         Side {
+        //             title: "baz".into(),
+        //             users: Some(44),
+        //             betted_channel_points: Some(45),
+        //             color: "PINK".into(),
+        //         },
+        //     ],
+        //     state: GambaState::Payed {
+        //         winner: Side {
+        //             title: "bar".into(),
+        //             users: Some(42),
+        //             betted_channel_points: Some(43),
+        //             color: "BLUE".into(),
+        //         },
+        //         payed_at: Timestamp::now(),
+        //     },
+        //     window: Duration::from_secs(32),
+        //     started_at: Timestamp::now(),
+        // };
 
-        let foo = minijinja::value::Value::from_serializable(&input);
-        dbg!(&foo);
+        // let foo = minijinja::value::Value::from_serializable(&input);
+        // dbg!(&foo);
 
-        let mut env = build_global_templates_env();
-        env.add_function("ciccio", ciccio);
-        dbg!(env.render_str(template, foo).unwrap());
+        // let mut env = build_global_templates_env();
+        // env.add_function("ciccio", ciccio);
+        // dbg!(env.render_str(template, foo).unwrap());
     }
 }

@@ -1,9 +1,14 @@
+use std::cmp::Ordering;
 use std::str::FromStr;
+use std::time::Duration;
 
 use chrono_tz::Tz;
+use minijinja::value::Value;
 use minijinja::Environment;
 use minijinja::Error;
 use minijinja::ErrorKind;
+use serde::Deserialize;
+use serde::Serialize;
 use sqlx::types::chrono::DateTime;
 use sqlx::types::chrono::FixedOffset;
 use sqlx::types::chrono::Utc;
@@ -12,7 +17,8 @@ pub fn build_global_templates_env<'a>() -> Environment<'a> {
     let mut template_env = Environment::new();
     template_env.add_function("now", now);
     template_env.add_filter("format_date_time", format_date_time);
-    template_env.add_function("format_duration", format_duration);
+    template_env.add_function("sub_date_times", sub_date_times);
+    // template_env.add_function("format_duration", format_duration);
 
     template_env
 }
@@ -26,6 +32,62 @@ fn format_date_time(date_time: &str, format: &str) -> Result<String, Error> {
     let date_time = parse_date_time_from_rfc3339(date_time)?;
     Ok(date_time.format(format).to_string())
 }
+
+fn sub_date_times(from_date_time: &str, to_date_time: &str) -> Result<Value, Error> {
+    let from_date_time = parse_date_time_from_rfc3339(from_date_time)?;
+    let to_date_time = parse_date_time_from_rfc3339(to_date_time)?;
+
+    let time_span = match from_date_time.cmp(&to_date_time) {
+        Ordering::Less => TimeSpan::InTheFuture {
+            duration: (to_date_time - from_date_time).to_std().unwrap(),
+        },
+        Ordering::Greater => TimeSpan::InThePast {
+            duration: (from_date_time - to_date_time).to_std().unwrap(),
+        },
+        Ordering::Equal => TimeSpan::Zero {
+            duration: Duration::ZERO,
+        },
+    };
+
+    Ok(Value::from_serializable(&time_span))
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[serde(tag = "kind")]
+enum TimeSpan {
+    InTheFuture { duration: Duration },
+    InThePast { duration: Duration },
+    Zero { duration: Duration },
+}
+
+// pub fn format_duration(from_date_time: &str, to_date_time: &str) -> Result<String, Error> {
+//     let from_date_time: DateTime<Utc> = parse_date_time_from_rfc3339(from_date_time)?;
+//     let to_date_time: DateTime<Utc> = parse_date_time_from_rfc3339(to_date_time)?;
+
+//     let (from_date_time, to_date_time) = if from_date_time >= to_date_time {
+//         (to_date_time, from_date_time)
+//     } else {
+//         (from_date_time, to_date_time)
+//     };
+
+//     let formatted_duration = {
+//         let mut formatter = timeago::Formatter::new();
+//         formatter.ago("");
+//         formatter.convert_chrono(from_date_time, to_date_time)
+//     };
+
+//     if formatted_duration == "???" {
+//         return Err(Error::new(
+//             ErrorKind::InvalidOperation,
+//             format!(
+//                 "Supplied from_date_time {:?} is after supplied to_date_time {:?}.",
+//                 from_date_time, to_date_time
+//             ),
+//         ));
+//     }
+
+//     Ok(formatted_duration)
+// }
 
 fn parse_timezone(timezone: &str) -> Result<Tz, Error> {
     Tz::from_str(timezone).map_err(|e| {
@@ -49,6 +111,7 @@ fn parse_date_time_from_rfc3339(date_time: &str) -> Result<DateTime<FixedOffset>
 #[cfg(test)]
 mod tests {
     use chrono::Duration;
+    use serde_json::json;
 
     use super::*;
 
@@ -82,22 +145,43 @@ mod tests {
     }
 
     #[test]
-    fn test_format_duration_works_as_expected() {
-        let now = Utc::now();
-        let past = now - Duration::days(1);
-        let future = now + Duration::days(1);
+    fn test_sub_date_times_works_as_expected() {
+        let past = "2023-04-16T07:52:13.735001+02:00";
+        let future = "2023-04-17T07:50:13.739001+02:00";
 
+        let result = serde_json::to_value(sub_date_times(past, future).unwrap()).unwrap();
         assert_eq!(
-            "1 day",
-            format_duration(now.to_rfc3339().as_str(), now.to_rfc3339().as_str()).unwrap()
+            result,
+            json!({"kind": "InTheFuture", "duration": { "nanos": 4000000, "secs": 86280}})
         );
+
+        let result = serde_json::to_value(sub_date_times(future, past).unwrap()).unwrap();
         assert_eq!(
-            "1 day",
-            format_duration(past.to_rfc3339().as_str(), now.to_rfc3339().as_str()).unwrap()
+            result,
+            json!({"kind": "InThePast", "duration": { "nanos": 4000000, "secs": 86280}})
         );
-        assert_eq!(
-            "1 day",
-            format_duration(future.to_rfc3339().as_str(), now.to_rfc3339().as_str()).unwrap()
-        );
+
+        let result = serde_json::to_value(sub_date_times(past, past).unwrap()).unwrap();
+        assert_eq!(result, json!({"kind": "Zero", "duration": { "nanos": 0, "secs": 0}}));
     }
+
+    // #[test]
+    // fn test_format_duration_works_as_expected() {
+    //     let now = Utc::now();
+    //     let past = now - Duration::days(1);
+    //     let future = now + Duration::days(1);
+
+    //     assert_eq!(
+    //         "1 day",
+    //         format_duration(now.to_rfc3339().as_str(), now.to_rfc3339().as_str()).unwrap()
+    //     );
+    //     assert_eq!(
+    //         "1 day",
+    //         format_duration(past.to_rfc3339().as_str(), now.to_rfc3339().as_str()).unwrap()
+    //     );
+    //     assert_eq!(
+    //         "1 day",
+    //         format_duration(future.to_rfc3339().as_str(), now.to_rfc3339().as_str()).unwrap()
+    //     );
+    // }
 }
