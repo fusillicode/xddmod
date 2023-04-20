@@ -4,6 +4,7 @@ members = ["src/*"]
 
 [workspace.dependencies]
 anyhow = "1.0.70"
+regex = "1.7.3"
 serde = "1.0.160"
 serde_json = "1.0.96"
 sqlx = { version = "0.6.3", features = ["runtime-tokio-native-tls", "uuid", "json", "chrono", "sqlite", "offline", "migrate"] }
