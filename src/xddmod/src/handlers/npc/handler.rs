@@ -70,21 +70,25 @@ impl<'a> Npc<'a> {
 
 // FIXME: poor man throttling
 lazy_static::lazy_static! {
-    static ref THROTTLE: std::sync::RwLock<
+    static ref THROTTLE: std::sync::Mutex<
         std::collections::BTreeMap<i64, sqlx::types::chrono::DateTime<sqlx::types::chrono::Utc>>
-    >  = std::sync::RwLock::new(std::collections::BTreeMap::new());
+    >  = std::sync::Mutex::new(std::collections::BTreeMap::new());
 }
 
 fn should_throttle(message: &PrivmsgMessage, reply: &Reply) -> anyhow::Result<bool> {
-    if message.badges.iter().any(|b| b.name == "moderator") {
+    if message
+        .badges
+        .iter()
+        .any(|b| b.name == "moderator" || b.name == "broadcaster")
+    {
         return Ok(false);
     }
 
-    let read_throttle = THROTTLE
-        .read()
-        .map_err(|error| anyhow::anyhow!("Cannot read THROTTLE RwLock, error: {:?}", error))?;
+    let mut throttle = THROTTLE
+        .lock()
+        .map_err(|error| anyhow::anyhow!("Cannot get THROTTLE Lock, error: {:?}", error))?;
 
-    let throttling = read_throttle
+    let throttling = throttle
         .get(&reply.id)
         .map(|last_reply_date_time| {
             let time_passed = sqlx::types::chrono::Utc::now() - *last_reply_date_time;
@@ -93,11 +97,7 @@ fn should_throttle(message: &PrivmsgMessage, reply: &Reply) -> anyhow::Result<bo
         .unwrap_or_default();
 
     if !throttling {
-        let mut write_throttle = THROTTLE
-            .write()
-            .map_err(|error| anyhow::anyhow!("Cannot write THROTTLE RwLock, error: {:?}", error))?;
-
-        write_throttle.insert(reply.id, sqlx::types::chrono::Utc::now());
+        throttle.insert(reply.id, sqlx::types::chrono::Utc::now());
     }
 
     Ok(throttling)
