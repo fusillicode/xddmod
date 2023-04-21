@@ -27,6 +27,6 @@ twitch_api2 = { version = "0.6.1", features = ["twitch_oauth2", "helix", "reqwes
 twitch-irc = { version = "5.0.0", features = ["with-serde", "refreshing-token-native-tls"] }
 url = { version = "2.3.1", features = ["serde"] }
 webbrowser = "0.8.9"
-
-[dev-dependencies]
+# FIXME: poor man throttling
+lazy_static = "1.4.0"
 chrono = "0.4.24"

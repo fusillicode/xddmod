@@ -34,13 +34,30 @@ impl<'a> Npc<'a> {
             .await
             .as_slice()
             {
-                [reply] => match reply.render_template::<Value>(&self.templates_env, None) {
-                    Ok(expaned_reply) if expaned_reply.is_empty() => {
-                        println!("Expanded reply template empty: {:?}", reply)
+                [reply] => {
+                    // FIXME: poor man throttling
+                    match should_throttle(message, reply) {
+                        Ok(false) => (),
+                        Ok(true) => {
+                            println!(
+                                "Skipping reply to message: message {:?}, reply {:?}",
+                                message, reply.template
+                            );
+                            return;
+                        }
+                        Err(error) => {
+                            println!("Error throttling, error: {:?}", error);
+                        }
                     }
-                    Ok(expaned_reply) => self.irc_client.say_in_reply_to(message, expaned_reply).await.unwrap(),
-                    Err(e) => println!("Error expanding reply template, error: {:?}, {:?}.", reply, e),
-                },
+
+                    match reply.render_template::<Value>(&self.templates_env, None) {
+                        Ok(expaned_reply) if expaned_reply.is_empty() => {
+                            println!("Expanded reply template empty: {:?}", reply)
+                        }
+                        Ok(expaned_reply) => self.irc_client.say_in_reply_to(message, expaned_reply).await.unwrap(),
+                        Err(e) => println!("Error expanding reply template, error: {:?}, {:?}.", reply, e),
+                    }
+                }
                 [] => {}
                 multiple_matchin_replies => println!(
                     "Multiple matching replies for message: {:?}, {:?}.",
@@ -49,4 +66,39 @@ impl<'a> Npc<'a> {
             }
         }
     }
+}
+
+// FIXME: poor man throttling
+lazy_static::lazy_static! {
+    static ref THROTTLE: std::sync::RwLock<
+        std::collections::BTreeMap<i64, sqlx::types::chrono::DateTime<sqlx::types::chrono::Utc>>
+    >  = std::sync::RwLock::new(std::collections::BTreeMap::new());
+}
+
+fn should_throttle(message: &PrivmsgMessage, reply: &Reply) -> anyhow::Result<bool> {
+    if message.badges.iter().any(|b| b.name == "moderator") {
+        return Ok(false);
+    }
+
+    let read_throttle = THROTTLE
+        .read()
+        .map_err(|error| anyhow::anyhow!("Cannot read THROTTLE RwLock, error: {:?}", error))?;
+
+    let throttling = read_throttle
+        .get(&reply.id)
+        .map(|last_reply_date_time| {
+            let time_passed = sqlx::types::chrono::Utc::now() - *last_reply_date_time;
+            time_passed < chrono::Duration::seconds(10)
+        })
+        .unwrap_or_default();
+
+    if !throttling {
+        let mut write_throttle = THROTTLE
+            .write()
+            .map_err(|error| anyhow::anyhow!("Cannot write THROTTLE RwLock, error: {:?}", error))?;
+
+        write_throttle.insert(reply.id, sqlx::types::chrono::Utc::now());
+    }
+
+    Ok(throttling)
 }

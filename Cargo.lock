@@ -2685,6 +2685,7 @@ dependencies = [
  "chrono-tz",
  "config",
  "hyper",
+ "lazy_static",
  "minijinja",
  "regex",
  "reqwest",
