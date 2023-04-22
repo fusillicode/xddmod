@@ -39,27 +39,27 @@ impl<'a> Npc<'a> {
                     match should_throttle(message, reply) {
                         Ok(false) => (),
                         Ok(true) => {
-                            println!(
-                                "Skipping reply to message: message {:?}, reply {:?}",
-                                message, reply.template
+                            eprintln!(
+                                "Skipping reply to message: message {:?}, sender {:?}, reply {:?}",
+                                message.message_text, message.sender, reply.template
                             );
                             return;
                         }
                         Err(error) => {
-                            println!("Error throttling, error: {:?}", error);
+                            eprintln!("Error throttling, error: {:?}", error);
                         }
                     }
 
                     match reply.render_template::<Value>(&self.templates_env, None) {
                         Ok(expaned_reply) if expaned_reply.is_empty() => {
-                            println!("Expanded reply template empty: {:?}", reply)
+                            eprintln!("Expanded reply template empty: {:?}", reply)
                         }
                         Ok(expaned_reply) => self.irc_client.say_in_reply_to(message, expaned_reply).await.unwrap(),
-                        Err(e) => println!("Error expanding reply template, error: {:?}, {:?}.", reply, e),
+                        Err(e) => eprintln!("Error expanding reply template, error: {:?}, {:?}.", reply, e),
                     }
                 }
                 [] => {}
-                multiple_matchin_replies => println!(
+                multiple_matchin_replies => eprintln!(
                     "Multiple matching replies for message: {:?}, {:?}.",
                     multiple_matchin_replies, server_message
                 ),

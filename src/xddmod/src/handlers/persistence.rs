@@ -46,7 +46,7 @@ impl Reply {
                 {
                     Ok(re) => re.is_match(message_text),
                     Err(e) => {
-                        println!("Invalid pattern for reply {:?} error: {:?}", reply, e);
+                        eprintln!("Invalid pattern for reply {:?} error: {:?}", reply, e);
                         false
                     }
                 }

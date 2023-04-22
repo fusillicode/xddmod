@@ -68,24 +68,24 @@ impl<'a> Gambage<'a> {
                             Ok(gamba_data) => {
                                 match reply.render_template(&self.templates_env, Some(&context!(gamba => gamba_data))) {
                                     Ok(expaned_reply) if expaned_reply.is_empty() => {
-                                        println!("Expanded reply template empty: {:?}.", reply)
+                                        eprintln!("Expanded reply template empty: {:?}.", reply)
                                     }
                                     Ok(expaned_reply) => {
                                         self.irc_client.say_in_reply_to(message, expaned_reply).await.unwrap()
                                     }
-                                    Err(e) => println!("Error expanding reply template, error: {:?}, {:?}.", reply, e),
+                                    Err(e) => eprintln!("Error expanding reply template, error: {:?}, {:?}.", reply, e),
                                 }
                             }
-                            Err(e) => println!(
+                            Err(e) => eprintln!(
                                 "Error building GambaData for Prediction {:?}, error: {:?}.",
                                 prediction, e
                             ),
                         },
-                        None => println!("No Predictions found for request {:?}.", prediction_request),
+                        None => eprintln!("No Predictions found for request {:?}.", prediction_request),
                     }
                 }
                 [] => {}
-                multiple_matchin_replies => println!(
+                multiple_matchin_replies => eprintln!(
                     "Multiple matching replies for message: {:?}, {:?}.",
                     multiple_matchin_replies, server_message
                 ),
