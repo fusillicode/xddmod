@@ -15,10 +15,10 @@ use sqlx::types::chrono::Utc;
 
 pub fn build_global_templates_env<'a>() -> Environment<'a> {
     let mut template_env = Environment::new();
-    template_env.add_function("now", now);
+    template_env.add_filter("now", now);
     template_env.add_filter("format_date_time", format_date_time);
-    template_env.add_function("sub_date_times", sub_date_times);
-    // template_env.add_function("format_duration", format_duration);
+    template_env.add_filter("sub_date_times", sub_date_times);
+    // template_env.add_filter("format_duration", format_duration);
 
     template_env
 }
