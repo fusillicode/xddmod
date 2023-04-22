@@ -40,7 +40,7 @@ impl<'a> Npc<'a> {
                         Ok(false) => (),
                         Ok(true) => {
                             eprintln!(
-                                "Skipping reply to message: message {:?}, sender {:?}, reply {:?}",
+                                "Skipping reply: message {:?}, sender {:?}, reply {:?}",
                                 message.message_text, message.sender, reply.template
                             );
                             return;
