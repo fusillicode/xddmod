@@ -14,7 +14,7 @@ axum = "0.6.16"
 chrono-tz = "0.8.1"
 config = "0.13.3"
 hyper = { version = "0.14.26", features = ["full"] }
-minijinja = "0.31.1"
+minijinja = "0.32.0"
 regex = "1.8.0"
 reqwest = "0.11.16"
 serde = { workspace = true }
