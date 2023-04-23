@@ -390,11 +390,13 @@ name = "dankcontent"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "minijinja",
  "pomsky-macro",
  "serde",
  "serde_json",
  "sqlx",
  "tokio",
+ "twitch_api2",
  "xddmod",
 ]
 

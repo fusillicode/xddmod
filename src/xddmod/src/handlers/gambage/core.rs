@@ -71,7 +71,8 @@ impl<'a> Gambage<'a> {
                                         eprintln!("Rendered reply template empty: {:?}.", reply)
                                     }
                                     Ok(rendered_reply) => {
-                                        self.irc_client.say_in_reply_to(message, rendered_reply).await.unwrap()
+                                        dbg!(rendered_reply);
+                                        // self.irc_client.say_in_reply_to(message, rendered_reply).await.unwrap()
                                     }
                                     Err(e) => eprintln!("Error rendering reply template, error: {:?}, {:?}.", reply, e),
                                 }
