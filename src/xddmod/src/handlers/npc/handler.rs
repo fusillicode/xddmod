@@ -51,11 +51,11 @@ impl<'a> Npc<'a> {
                     }
 
                     match reply.render_template::<Value>(&self.templates_env, None) {
-                        Ok(expaned_reply) if expaned_reply.is_empty() => {
-                            eprintln!("Expanded reply template empty: {:?}", reply)
+                        Ok(rendered_reply) if rendered_reply.is_empty() => {
+                            eprintln!("Rendered reply template empty: {:?}", reply)
                         }
-                        Ok(expaned_reply) => self.irc_client.say_in_reply_to(message, expaned_reply).await.unwrap(),
-                        Err(e) => eprintln!("Error expanding reply template, error: {:?}, {:?}.", reply, e),
+                        Ok(rendered_reply) => self.irc_client.say_in_reply_to(message, rendered_reply).await.unwrap(),
+                        Err(e) => eprintln!("Error rendering reply template, error: {:?}, {:?}.", reply, e),
                     }
                 }
                 [] => {}
