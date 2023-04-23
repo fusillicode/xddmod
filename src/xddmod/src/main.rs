@@ -2,8 +2,8 @@ use sqlx::SqlitePool;
 use twitch_api2::HelixClient;
 use xddmod::auth;
 use xddmod::auth::AppConfig;
-use xddmod::handlers::gambage::handler::Gambage;
-use xddmod::handlers::npc::handler::Npc;
+use xddmod::handlers::gambage::core::Gambage;
+use xddmod::handlers::npc::core::Npc;
 
 #[tokio::main]
 async fn main() {
