@@ -3,10 +3,9 @@ use std::str::FromStr;
 use std::time::Duration;
 
 use chrono_tz::Tz;
-use minijinja::value::Value;
 use minijinja::Environment;
-use minijinja::Error;
 use minijinja::ErrorKind;
+use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::Serialize;
 use sqlx::types::chrono::DateTime;
@@ -18,22 +17,22 @@ pub fn build_global_templates_env<'a>() -> Environment<'a> {
     template_env.add_filter("now", now);
     template_env.add_filter("format_date_time", format_date_time);
     template_env.add_filter("sub_date_times", sub_date_times);
-    // template_env.add_filter("format_duration", format_duration);
+    template_env.add_filter("format_duration", format_duration);
 
     template_env
 }
 
-fn now(timezone: Option<&str>) -> Result<String, Error> {
+fn now(timezone: Option<&str>) -> Result<String, minijinja::Error> {
     let timezone = timezone.map(parse_timezone).unwrap_or_else(|| Ok(Tz::UTC))?;
     Ok(Utc::now().with_timezone(&timezone).to_rfc3339())
 }
 
-fn format_date_time(date_time: &str, format: &str) -> Result<String, Error> {
+fn format_date_time(date_time: &str, format: &str) -> Result<String, minijinja::Error> {
     let date_time = parse_date_time_from_rfc3339(date_time)?;
     Ok(date_time.format(format).to_string())
 }
 
-fn sub_date_times(from_date_time: &str, to_date_time: &str) -> Result<Value, Error> {
+fn sub_date_times(from_date_time: &str, to_date_time: &str) -> Result<minijinja::value::Value, minijinja::Error> {
     let from_date_time = parse_date_time_from_rfc3339(from_date_time)?;
     let to_date_time = parse_date_time_from_rfc3339(to_date_time)?;
 
@@ -49,7 +48,7 @@ fn sub_date_times(from_date_time: &str, to_date_time: &str) -> Result<Value, Err
         },
     };
 
-    Ok(Value::from_serializable(&time_span))
+    Ok(minijinja::value::Value::from_serializable(&time_span))
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -60,47 +59,28 @@ enum TimeSpan {
     Zero { duration: Duration },
 }
 
-// pub fn format_duration(from_date_time: &str, to_date_time: &str) -> Result<String, Error> {
-//     let from_date_time: DateTime<Utc> = parse_date_time_from_rfc3339(from_date_time)?;
-//     let to_date_time: DateTime<Utc> = parse_date_time_from_rfc3339(to_date_time)?;
+fn format_duration(time_span: &minijinja::value::Value) -> Result<String, minijinja::Error> {
+    let duration: Duration = from_json_value(to_json_value(time_span)?)?;
 
-//     let (from_date_time, to_date_time) = if from_date_time >= to_date_time {
-//         (to_date_time, from_date_time)
-//     } else {
-//         (from_date_time, to_date_time)
-//     };
+    let mut formatter = timeago::Formatter::new();
+    formatter.ago("");
+    formatter.num_items(3);
 
-//     let formatted_duration = {
-//         let mut formatter = timeago::Formatter::new();
-//         formatter.ago("");
-//         formatter.convert_chrono(from_date_time, to_date_time)
-//     };
+    Ok(formatter.convert(duration))
+}
 
-//     if formatted_duration == "???" {
-//         return Err(Error::new(
-//             ErrorKind::InvalidOperation,
-//             format!(
-//                 "Supplied from_date_time {:?} is after supplied to_date_time {:?}.",
-//                 from_date_time, to_date_time
-//             ),
-//         ));
-//     }
-
-//     Ok(formatted_duration)
-// }
-
-fn parse_timezone(timezone: &str) -> Result<Tz, Error> {
+fn parse_timezone(timezone: &str) -> Result<Tz, minijinja::Error> {
     Tz::from_str(timezone).map_err(|e| {
-        Error::new(
+        minijinja::Error::new(
             ErrorKind::InvalidOperation,
             format!("Cannot parse &str {:?} as Tz, error {:?}.", timezone, e),
         )
     })
 }
 
-fn parse_date_time_from_rfc3339(date_time: &str) -> Result<DateTime<FixedOffset>, Error> {
+fn parse_date_time_from_rfc3339(date_time: &str) -> Result<DateTime<FixedOffset>, minijinja::Error> {
     DateTime::parse_from_rfc3339(date_time).map_err(|e| {
-        Error::new(
+        minijinja::Error::new(
             ErrorKind::InvalidOperation,
             format!("Cannot parse {:?} as DateTime, error {:?}.", date_time, e),
         )
@@ -108,9 +88,33 @@ fn parse_date_time_from_rfc3339(date_time: &str) -> Result<DateTime<FixedOffset>
     })
 }
 
+fn to_json_value(value: &minijinja::value::Value) -> Result<serde_json::Value, minijinja::Error> {
+    serde_json::to_value(value).map_err(|e| {
+        minijinja::Error::new(
+            ErrorKind::InvalidOperation,
+            format!(
+                "Cannot deserialize &minijinja::Value {:?} into serde_json::Value, error {:?}.",
+                value, e
+            ),
+        )
+    })
+}
+
+fn from_json_value<T: DeserializeOwned>(value: serde_json::Value) -> Result<T, minijinja::Error> {
+    serde_json::from_value(value.clone()).map_err(|e| {
+        minijinja::Error::new(
+            ErrorKind::InvalidOperation,
+            format!(
+                "Cannot deserialize serde_json::Value {:?} into T, error {:?}.",
+                value, e
+            ),
+        )
+    })
+}
+
 #[cfg(test)]
 mod tests {
-    use chrono::Duration;
+    use minijinja::context;
     use serde_json::json;
 
     use super::*;
@@ -165,23 +169,23 @@ mod tests {
         assert_eq!(result, json!({"kind": "Zero", "duration": { "nanos": 0, "secs": 0}}));
     }
 
-    // #[test]
-    // fn test_format_duration_works_as_expected() {
-    //     let now = Utc::now();
-    //     let past = now - Duration::days(1);
-    //     let future = now + Duration::days(1);
+    #[test]
+    fn test_format_duration_works_as_expected() {
+        let template = r#"
+            {% if time_span_0.kind == 'InTheFuture' %} still {{ time_span_0.duration | format_duration }} remaning {% endif %}
+            {% if time_span_1.kind == 'InThePast' %} {{ time_span_1.duration | format_duration }} ago {% endif %}
+            {% if time_span_2.kind == 'Zero' %} {{ time_span_2.duration | format_duration }} {% endif %}
+        "#;
+        let template_context = context! {
+                time_span_0 => TimeSpan::InTheFuture { duration: std::time::Duration::new(42999777, 0) },
+                time_span_1 => TimeSpan::InThePast { duration: std::time::Duration::new(42999777, 0) },
+                time_span_2 => TimeSpan::Zero { duration: std::time::Duration::new(0, 0) },
+        };
+        let env = build_global_templates_env();
 
-    //     assert_eq!(
-    //         "1 day",
-    //         format_duration(now.to_rfc3339().as_str(), now.to_rfc3339().as_str()).unwrap()
-    //     );
-    //     assert_eq!(
-    //         "1 day",
-    //         format_duration(past.to_rfc3339().as_str(), now.to_rfc3339().as_str()).unwrap()
-    //     );
-    //     assert_eq!(
-    //         "1 day",
-    //         format_duration(future.to_rfc3339().as_str(), now.to_rfc3339().as_str()).unwrap()
-    //     );
-    // }
+        assert_eq!(
+            "\n             still 1 year 4 months 1 week remaning \n             1 year 4 months 1 week ago \n             now \n        ",
+            env.render_str(template, template_context).unwrap()
+        );
+    }
 }
