@@ -64,6 +64,7 @@ fn format_duration(time_span: &minijinja::value::Value) -> Result<String, miniji
 
     let mut formatter = timeago::Formatter::new();
     formatter.ago("");
+    formatter.too_low("0");
     formatter.num_items(3);
 
     Ok(formatter.convert(duration))
