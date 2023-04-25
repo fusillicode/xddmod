@@ -18,6 +18,7 @@ pub fn build_global_templates_env<'a>() -> Environment<'a> {
     template_env.add_filter("format_date_time", format_date_time);
     template_env.add_filter("sub_date_times", sub_date_times);
     template_env.add_filter("format_duration", format_duration);
+    template_env.add_filter("wrap_string", wrap_string);
 
     template_env
 }
@@ -68,6 +69,10 @@ fn format_duration(time_span: &minijinja::value::Value) -> Result<String, miniji
     formatter.num_items(3);
 
     Ok(formatter.convert(duration))
+}
+
+fn wrap_string(string: &str, wrapping: &str) -> Result<String, minijinja::Error> {
+    Ok(format!("{}{}{}", wrapping, string, wrapping))
 }
 
 fn parse_timezone(timezone: &str) -> Result<Tz, minijinja::Error> {
@@ -186,6 +191,22 @@ mod tests {
 
         assert_eq!(
             "\n             still 1 year 4 months 1 week remaning \n             1 year 4 months 1 week ago \n             now \n        ",
+            env.render_str(template, template_context).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_wrap_string_as_expected() {
+        let template = r#"
+            {{ list|map(attribute='title')|map('wrap_string', "'")|join(' vs ') }}
+        "#;
+        let template_context = context! {
+                list => vec![json!({"title": "Foo"}), json!({"title": "Bar"}), json!({"title": "Baz"})],
+        };
+        let env = build_global_templates_env();
+
+        assert_eq!(
+            "\n            'Foo' vs 'Bar' vs 'Baz'\n        ",
             env.render_str(template, template_context).unwrap()
         );
     }
