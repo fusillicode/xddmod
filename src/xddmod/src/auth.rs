@@ -1,4 +1,3 @@
-use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -10,14 +9,10 @@ use axum::response::Redirect;
 use axum::response::Response;
 use axum::routing::get;
 use axum::Router;
-use config::Config;
-use config::Environment;
 use serde::Deserialize;
 use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::sync::Mutex;
 use twitch_api2::twitch_oauth2::tokens::UserTokenBuilder;
-use twitch_api2::twitch_oauth2::ClientId;
-use twitch_api2::twitch_oauth2::ClientSecret;
 use twitch_api2::twitch_oauth2::Scope;
 use twitch_api2::twitch_oauth2::TwitchToken;
 use twitch_api2::twitch_oauth2::UserToken;
@@ -28,7 +23,8 @@ use twitch_irc::login::UserAccessToken;
 use twitch_irc::message::ServerMessage;
 use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
-use url::Url;
+
+use crate::app_config::AppConfig;
 
 pub type MessageReceiver = UnboundedReceiver<ServerMessage>;
 pub type IRCClient = TwitchIRCClient<SecureTCPTransport, RefreshingLoginCredentials<InMemoryTokenStorage>>;
@@ -112,26 +108,6 @@ async fn auth_callback(
     let mut guard = app_state.auth_response_step_1.lock().await;
     *guard = Some(auth_response_step_1.clone());
     Redirect::to("https://cdn.7tv.app/emote/63bb3450799f5d0ce4b80686/4x.webp").into_response()
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct AppConfig {
-    pub socket_addr: SocketAddr,
-    pub server_url: Url,
-    pub database_url: Url,
-    pub client_id: ClientId,
-    pub client_secret: ClientSecret,
-}
-
-impl AppConfig {
-    pub fn init() -> Self {
-        Config::builder()
-            .add_source(Environment::default())
-            .build()
-            .unwrap()
-            .try_deserialize()
-            .unwrap()
-    }
 }
 
 struct AppState {

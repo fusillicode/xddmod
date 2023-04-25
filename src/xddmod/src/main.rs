@@ -1,7 +1,7 @@
 use sqlx::SqlitePool;
 use twitch_api2::HelixClient;
+use xddmod::app_config::AppConfig;
 use xddmod::auth;
-use xddmod::auth::AppConfig;
 use xddmod::handlers::gambage::core::Gambage;
 use xddmod::handlers::npc::core::Npc;
 
