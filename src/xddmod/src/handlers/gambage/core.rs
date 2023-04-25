@@ -102,18 +102,28 @@ pub struct Gamba {
     pub state: GambaState,
     pub window: Duration,
     pub started_at: Timestamp,
+    pub expected_closed_at: Timestamp,
 }
 
 impl TryFrom<Prediction> for Gamba {
     type Error = anyhow::Error;
 
     fn try_from(x: Prediction) -> Result<Self, Self::Error> {
+        let expected_closed_at = {
+            let y = x.created_at.to_fixed_offset() + Duration::from_secs(x.prediction_window as u64);
+
+            Timestamp::try_from(y).map_err(|e| {
+                anyhow!("Cannot build closing_at from created_at {:?} and prediction_window {:?} for prediction {:?}, error {:?}.", x.created_at, x.prediction_window, x, e)
+            })?
+        };
+
         Ok(Self {
             title: x.title.clone(),
             sides: x.outcomes.clone().into_iter().map(Side::from).collect(),
             state: GambaState::try_from(x.clone())?,
             window: Duration::from_secs(x.prediction_window as u64),
             started_at: x.created_at,
+            expected_closed_at,
         })
     }
 }
@@ -140,7 +150,7 @@ impl From<PredictionOutcome> for Side {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "name")]
 pub enum GambaState {
-    Up { closing_at: Timestamp },
+    Up,
     Closed { closed_at: Timestamp },
     Payed { winner: Side, payed_at: Timestamp },
     Refunded { refunded_at: Timestamp },
@@ -151,6 +161,13 @@ impl TryFrom<Prediction> for GambaState {
 
     fn try_from(x: Prediction) -> Result<Self, Self::Error> {
         Ok(match &x.status {
+            PredictionStatus::Active => Self::Up,
+            PredictionStatus::Locked => Self::Closed {
+                closed_at: x
+                    .clone()
+                    .ended_at
+                    .ok_or_else(|| anyhow!("Missing ended_at in {:?} prediction {:?}.", x.status, x))?,
+            },
             PredictionStatus::Resolved => {
                 let winner_id = x
                     .clone()
@@ -181,25 +198,11 @@ impl TryFrom<Prediction> for GambaState {
                         .ok_or_else(|| anyhow!("Missing closed_at in {:?} prediction {:?}.", x.status, x))?,
                 }
             }
-            PredictionStatus::Active => {
-                let closing_at = x.created_at.to_fixed_offset() + Duration::from_secs(x.prediction_window as u64);
-                Self::Up {
-                    closing_at: Timestamp::try_from(closing_at).map_err(|e| {
-                        anyhow!("Cannot build closing_at from created_at {:?} and prediction_window {:?} for prediction {:?}, error {:?}.", x.created_at, x.prediction_window, x, e)
-                    })?,
-                }
-            }
             PredictionStatus::Canceled => Self::Refunded {
                 refunded_at: x
                     .clone()
                     .locked_at
                     .ok_or_else(|| anyhow!("Missing locked_at in {:?} prediction {:?}.", x.status, x))?,
-            },
-            PredictionStatus::Locked => Self::Closed {
-                closed_at: x
-                    .clone()
-                    .ended_at
-                    .ok_or_else(|| anyhow!("Missing ended_at in {:?} prediction {:?}.", x.status, x))?,
             },
             unexpected_variant => bail!("Unexpected variant {:?} for prediction {:?}.", unexpected_variant, x),
         })
