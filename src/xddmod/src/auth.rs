@@ -45,7 +45,7 @@ pub async fn authenticate<'a>(app_config: AppConfig) -> (MessageReceiver, IRCCli
         app_config.client_secret.clone(),
         auth_callback_url,
     )
-    .set_scopes(vec![Scope::ChatRead, Scope::ChatEdit, Scope::ChannelManagePredictions]);
+    .set_scopes(vec![Scope::ChatRead, Scope::ChatEdit, Scope::ChannelReadPredictions]);
 
     let (auth_url, _) = user_token_builder.generate_url();
 
