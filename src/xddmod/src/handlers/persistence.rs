@@ -1,13 +1,16 @@
 use minijinja::context;
 use minijinja::Environment;
 use regex::RegexBuilder;
+use serde::Deserialize;
+use serde::Serialize;
 use sqlx::sqlite::SqliteExecutor;
 use sqlx::types::chrono::DateTime;
 use sqlx::types::chrono::Utc;
 
 #[derive(Debug, Clone)]
-pub struct NpcReply {
+pub struct Reply {
     pub id: i64,
+    pub handler: Option<Handler>,
     pub pattern: String,
     pub case_insensitive: bool,
     pub template: String,
@@ -19,21 +22,22 @@ pub struct NpcReply {
     pub updated_at: DateTime<Utc>,
 }
 
-impl NpcReply {
+impl Reply {
     pub async fn matching<'a>(
-        you: &str,
+        handler: Handler,
+        you: Option<&str>,
         channel: &str,
         message_text: &str,
         executor: impl SqliteExecutor<'a>,
-    ) -> Vec<NpcReply> {
-        let is_mention = message_text.to_lowercase().contains(you);
+    ) -> Vec<Reply> {
+        let is_mention = you.map(|y| message_text.to_lowercase().contains(y));
 
-        Self::all(channel, executor)
+        Self::all(handler, channel, executor)
             .await
             .unwrap()
             .into_iter()
             .filter(|reply| {
-                if is_mention != reply.to_mention {
+                if is_mention.map(|x| x != reply.to_mention).unwrap_or(false) {
                     return false;
                 }
                 match RegexBuilder::new(&reply.pattern)
@@ -42,7 +46,7 @@ impl NpcReply {
                 {
                     Ok(re) => re.is_match(message_text),
                     Err(e) => {
-                        println!("Invalid pattern for reply {:?} error: {:?}", reply, e);
+                        eprintln!("Invalid pattern for reply {:?} error: {:?}", reply, e);
                         false
                     }
                 }
@@ -50,16 +54,29 @@ impl NpcReply {
             .collect()
     }
 
-    pub fn render_template(&self, template_env: &Environment) -> Result<String, minijinja::Error> {
-        template_env.render_str(&self.template, context!())
+    pub fn render_template<S: Serialize>(
+        &self,
+        template_env: &Environment,
+        ctx: Option<&S>,
+    ) -> Result<String, minijinja::Error> {
+        let ctx = match ctx {
+            Some(ctx) => minijinja::value::Value::from_serializable(ctx),
+            None => context!(),
+        };
+        template_env.render_str(&self.template, ctx)
     }
 
-    async fn all<'a>(channel: &str, executor: impl SqliteExecutor<'a>) -> Result<Vec<Self>, sqlx::Error> {
+    async fn all<'a>(
+        handler: Handler,
+        channel: &str,
+        executor: impl SqliteExecutor<'a>,
+    ) -> Result<Vec<Self>, sqlx::Error> {
         sqlx::query_as!(
             Self,
             r#"
                 select
                     id,
+                    handler as "handler: Handler",
                     pattern,
                     case_insensitive,
                     template,
@@ -69,13 +86,21 @@ impl NpcReply {
                     created_by,
                     created_at as "created_at!: DateTime<Utc>",
                     updated_at as "updated_at!: DateTime<Utc>"
-                from npc_replies
-                where enabled = 1 and (channel is null or channel = $1)
+                from replies
+                where enabled = 1 and (channel is null or channel = $1) and (handler is null or handler = $2)
                 order by id asc
             "#,
-            channel
+            channel,
+            handler as _,
         )
         .fetch_all(executor)
         .await
     }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "TEXT")]
+pub enum Handler {
+    Npc,
+    Gamba,
 }
