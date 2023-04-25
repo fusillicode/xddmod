@@ -180,7 +180,7 @@ mod tests {
         let template = r#"
             {% if time_span_0.kind == 'InTheFuture' %} still {{ time_span_0.duration | format_duration }} remaning {% endif %}
             {% if time_span_1.kind == 'InThePast' %} {{ time_span_1.duration | format_duration }} ago {% endif %}
-            {% if time_span_2.kind == 'Zero' %} {{ time_span_2.duration | format_duration }} {% endif %}
+            {% if time_span_2.kind == 'Zero' %} {{ time_span_2.duration | format_duration }} ago {% endif %}
         "#;
         let template_context = context! {
                 time_span_0 => TimeSpan::InTheFuture { duration: std::time::Duration::new(42999777, 0) },
@@ -190,7 +190,7 @@ mod tests {
         let env = build_global_templates_env();
 
         assert_eq!(
-            "\n             still 1 year 4 months 1 week remaning \n             1 year 4 months 1 week ago \n             now \n        ",
+            "\n             still 1 year 4 months 1 week remaning \n             1 year 4 months 1 week ago \n             0 seconds ago \n        ",
             env.render_str(template, template_context).unwrap()
         );
     }
