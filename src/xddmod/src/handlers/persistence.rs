@@ -103,4 +103,5 @@ impl Reply {
 pub enum Handler {
     Npc,
     Gamba,
+    Gg,
 }

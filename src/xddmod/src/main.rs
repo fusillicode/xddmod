@@ -3,6 +3,7 @@ use twitch_api2::HelixClient;
 use xddmod::app_config::AppConfig;
 use xddmod::auth;
 use xddmod::handlers::gambage::core::Gambage;
+use xddmod::handlers::gg::core::Gg;
 use xddmod::handlers::npc::core::Npc;
 
 #[tokio::main]
@@ -36,6 +37,11 @@ async fn main() {
         token: user_token,
         broadcaster_id: broadcaster.id,
         helix_client,
+        irc_client: irc_client.clone(),
+        db_pool: db_pool.clone(),
+        templates_env: templates_env.clone(),
+    };
+    let gg = Gg {
         irc_client,
         db_pool,
         templates_env,
@@ -46,6 +52,7 @@ async fn main() {
         while let Some(server_message) = incoming_messages.recv().await {
             npc.handle(&server_message).await;
             gambage.handle(&server_message).await;
+            gg.handle(&server_message).await;
         }
     })
     .await

@@ -59,9 +59,9 @@ impl<'a> Npc<'a> {
                     }
                 }
                 [] => {}
-                multiple_matchin_replies => eprintln!(
+                multiple_matching_replies => eprintln!(
                     "Multiple matching replies for message: {:?}, {:?}.",
-                    multiple_matchin_replies, server_message
+                    multiple_matching_replies, server_message
                 ),
             }
         }
