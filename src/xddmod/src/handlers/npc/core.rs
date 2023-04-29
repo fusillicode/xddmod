@@ -92,7 +92,7 @@ fn should_throttle(message: &PrivmsgMessage, reply: &Reply) -> anyhow::Result<bo
         .get(&reply.id)
         .map(|last_reply_date_time| {
             let time_passed = sqlx::types::chrono::Utc::now() - *last_reply_date_time;
-            time_passed < chrono::Duration::seconds(10)
+            time_passed < chrono::Duration::seconds(20)
         })
         .unwrap_or_default();
 
