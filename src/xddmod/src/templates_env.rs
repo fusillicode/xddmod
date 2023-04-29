@@ -1,6 +1,5 @@
 use std::cmp::Ordering;
 use std::str::FromStr;
-use std::time::Duration;
 
 use chrono_tz::Tz;
 use minijinja::Environment;
@@ -45,7 +44,7 @@ fn sub_date_times(from_date_time: &str, to_date_time: &str) -> Result<minijinja:
             duration: (from_date_time - to_date_time).to_std().unwrap(),
         },
         Ordering::Equal => TimeSpan::Zero {
-            duration: Duration::ZERO,
+            duration: std::time::Duration::ZERO,
         },
     };
 
@@ -55,13 +54,13 @@ fn sub_date_times(from_date_time: &str, to_date_time: &str) -> Result<minijinja:
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "kind")]
 enum TimeSpan {
-    InTheFuture { duration: Duration },
-    InThePast { duration: Duration },
-    Zero { duration: Duration },
+    InTheFuture { duration: std::time::Duration },
+    InThePast { duration: std::time::Duration },
+    Zero { duration: std::time::Duration },
 }
 
 fn format_duration(time_span: &minijinja::value::Value) -> Result<String, minijinja::Error> {
-    let duration: Duration = from_json_value(to_json_value(time_span)?)?;
+    let duration: std::time::Duration = from_json_value(to_json_value(time_span)?)?;
 
     let mut formatter = timeago::Formatter::new();
     formatter.ago("");
