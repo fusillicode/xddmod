@@ -31,5 +31,5 @@ twitch-irc = { version = "5.0.0", features = ["with-serde", "refreshing-token-na
 url = { version = "2.3.1", features = ["serde"] }
 webbrowser = "0.8.9"
 # FIXME: poor man throttling
-lazy_static = "1.4.0"
+lazy_static = { workspace = true }
 chrono = "0.4.24"

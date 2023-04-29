@@ -33,14 +33,15 @@ async fn main() {
         db_pool: db_pool.clone(),
         templates_env: templates_env.clone(),
     };
-    let gambage = Gambage {
-        token: user_token,
-        broadcaster_id: broadcaster.id,
-        helix_client,
-        irc_client: irc_client.clone(),
-        db_pool: db_pool.clone(),
-        templates_env: templates_env.clone(),
-    };
+    // FIXME: gamba API requires broadcaster user token 🥲
+    // let gambage = Gambage {
+    //     token: user_token,
+    //     broadcaster_id: broadcaster.id,
+    //     helix_client,
+    //     irc_client: irc_client.clone(),
+    //     db_pool: db_pool.clone(),
+    //     templates_env: templates_env.clone(),
+    // };
     let gg = Gg {
         irc_client,
         db_pool,
@@ -51,7 +52,8 @@ async fn main() {
     tokio::spawn(async move {
         while let Some(server_message) = incoming_messages.recv().await {
             npc.handle(&server_message).await;
-            gambage.handle(&server_message).await;
+            // FIXME: gamba API requires broadcaster user token 🥲
+            // gambage.handle(&server_message).await;
             gg.handle(&server_message).await;
         }
     })
