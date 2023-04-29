@@ -18,7 +18,7 @@ pub struct Reply {
     pub to_mention: bool,
     pub channel: Option<String>,
     pub enabled: bool,
-    pub additonal_inputs: Option<Json<serde_json::Value>>,
+    pub additional_inputs: Option<Json<serde_json::Value>>,
     pub created_by: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -86,7 +86,7 @@ impl Reply {
                     channel,
                     enabled,
                     created_by,
-                    additional_inputs as "additonal_inputs: Json<serde_json::Value>",
+                    additional_inputs as "additional_inputs: Json<serde_json::Value>",
                     created_at as "created_at!: DateTime<Utc>",
                     updated_at as "updated_at!: DateTime<Utc>"
                 from replies
