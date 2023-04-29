@@ -71,8 +71,7 @@ impl<'a> Gambage<'a> {
                                         eprintln!("Rendered reply template empty: {:?}.", reply)
                                     }
                                     Ok(rendered_reply) => {
-                                        dbg!(rendered_reply);
-                                        // self.irc_client.say_in_reply_to(message, rendered_reply).await.unwrap()
+                                        self.irc_client.say_in_reply_to(message, rendered_reply).await.unwrap()
                                     }
                                     Err(e) => eprintln!("Error rendering reply template, error: {:?}, {:?}.", reply, e),
                                 }
@@ -86,9 +85,9 @@ impl<'a> Gambage<'a> {
                     }
                 }
                 [] => {}
-                multiple_matchin_replies => eprintln!(
+                multiple_matching_replies => eprintln!(
                     "Multiple matching replies for message: {:?}, {:?}.",
-                    multiple_matchin_replies, server_message
+                    multiple_matching_replies, server_message
                 ),
             }
         }

@@ -13,12 +13,15 @@ anyhow = { workspace = true }
 axum = "0.6.17"
 chrono-tz = "0.8.1"
 config = "0.13.3"
+fake = { workspace = true }
+rand = { workspace = true }
 hyper = { version = "0.14.26", features = ["full"] }
 minijinja = { workspace = true }
 regex = { workspace = true }
 reqwest = "0.11.16"
 serde = { workspace = true }
 serde_json = { workspace = true }
+serde_with = { version = "2.3.2", features = ["chrono_0_4"] }
 sqlx = { workspace = true }
 timeago = "0.4.1"
 tokio = { workspace = true }
@@ -28,5 +31,5 @@ twitch-irc = { version = "5.0.0", features = ["with-serde", "refreshing-token-na
 url = { version = "2.3.1", features = ["serde"] }
 webbrowser = "0.8.9"
 # FIXME: poor man throttling
-lazy_static = "1.4.0"
+lazy_static = { workspace = true }
 chrono = "0.4.24"

@@ -6,6 +6,7 @@ use serde::Serialize;
 use sqlx::sqlite::SqliteExecutor;
 use sqlx::types::chrono::DateTime;
 use sqlx::types::chrono::Utc;
+use sqlx::types::Json;
 
 #[derive(Debug, Clone)]
 pub struct Reply {
@@ -17,6 +18,7 @@ pub struct Reply {
     pub to_mention: bool,
     pub channel: Option<String>,
     pub enabled: bool,
+    pub additional_inputs: Option<Json<serde_json::Value>>,
     pub created_by: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -84,6 +86,7 @@ impl Reply {
                     channel,
                     enabled,
                     created_by,
+                    additional_inputs as "additional_inputs: Json<serde_json::Value>",
                     created_at as "created_at!: DateTime<Utc>",
                     updated_at as "updated_at!: DateTime<Utc>"
                 from replies
@@ -103,4 +106,5 @@ impl Reply {
 pub enum Handler {
     Npc,
     Gamba,
+    Gg,
 }

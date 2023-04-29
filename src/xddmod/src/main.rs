@@ -1,8 +1,9 @@
 use sqlx::SqlitePool;
-use twitch_api2::HelixClient;
+// use twitch_api2::HelixClient;
 use xddmod::app_config::AppConfig;
 use xddmod::auth;
-use xddmod::handlers::gambage::core::Gambage;
+// use xddmod::handlers::gambage::core::Gambage;
+use xddmod::handlers::gg::core::Gg;
 use xddmod::handlers::npc::core::Npc;
 
 #[tokio::main]
@@ -13,14 +14,14 @@ async fn main() {
 
     let db_pool = SqlitePool::connect(app_config.database_url.as_ref()).await.unwrap();
 
-    let (mut incoming_messages, irc_client, user_token) = auth::authenticate(app_config.clone()).await;
-    let helix_client: HelixClient<'static, reqwest::Client> = HelixClient::default();
+    let (mut incoming_messages, irc_client, _user_token) = auth::authenticate(app_config.clone()).await;
+    // let helix_client: HelixClient<'static, reqwest::Client> = HelixClient::default();
 
-    let broadcaster = helix_client
-        .get_user_from_login(channel.to_string(), &user_token)
-        .await
-        .unwrap()
-        .unwrap();
+    // let broadcaster = helix_client
+    //     .get_user_from_login(channel.to_string(), &user_token)
+    //     .await
+    //     .unwrap()
+    //     .unwrap();
 
     irc_client.join(channel).unwrap();
 
@@ -32,10 +33,16 @@ async fn main() {
         db_pool: db_pool.clone(),
         templates_env: templates_env.clone(),
     };
-    let gambage = Gambage {
-        token: user_token,
-        broadcaster_id: broadcaster.id,
-        helix_client,
+    // FIXME: gamba API requires broadcaster user token 🥲
+    // let gambage = Gambage {
+    //     token: user_token,
+    //     broadcaster_id: broadcaster.id,
+    //     helix_client,
+    //     irc_client: irc_client.clone(),
+    //     db_pool: db_pool.clone(),
+    //     templates_env: templates_env.clone(),
+    // };
+    let gg = Gg {
         irc_client,
         db_pool,
         templates_env,
@@ -45,7 +52,9 @@ async fn main() {
     tokio::spawn(async move {
         while let Some(server_message) = incoming_messages.recv().await {
             npc.handle(&server_message).await;
-            gambage.handle(&server_message).await;
+            // FIXME: gamba API requires broadcaster user token 🥲
+            // gambage.handle(&server_message).await;
+            gg.handle(&server_message).await;
         }
     })
     .await
