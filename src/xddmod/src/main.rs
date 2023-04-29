@@ -1,8 +1,8 @@
 use sqlx::SqlitePool;
-use twitch_api2::HelixClient;
+// use twitch_api2::HelixClient;
 use xddmod::app_config::AppConfig;
 use xddmod::auth;
-use xddmod::handlers::gambage::core::Gambage;
+// use xddmod::handlers::gambage::core::Gambage;
 use xddmod::handlers::gg::core::Gg;
 use xddmod::handlers::npc::core::Npc;
 
@@ -14,14 +14,14 @@ async fn main() {
 
     let db_pool = SqlitePool::connect(app_config.database_url.as_ref()).await.unwrap();
 
-    let (mut incoming_messages, irc_client, user_token) = auth::authenticate(app_config.clone()).await;
-    let helix_client: HelixClient<'static, reqwest::Client> = HelixClient::default();
+    let (mut incoming_messages, irc_client, _user_token) = auth::authenticate(app_config.clone()).await;
+    // let helix_client: HelixClient<'static, reqwest::Client> = HelixClient::default();
 
-    let broadcaster = helix_client
-        .get_user_from_login(channel.to_string(), &user_token)
-        .await
-        .unwrap()
-        .unwrap();
+    // let broadcaster = helix_client
+    //     .get_user_from_login(channel.to_string(), &user_token)
+    //     .await
+    //     .unwrap()
+    //     .unwrap();
 
     irc_client.join(channel).unwrap();
 
