@@ -4,7 +4,6 @@ use std::time::Duration;
 use anyhow::bail;
 use chrono::DateTime;
 use chrono::Utc;
-use minijinja::value::Object;
 use reqwest::Url;
 use serde::Deserialize;
 use serde::Serialize;
@@ -157,14 +156,6 @@ pub struct Games {
     pub meta: Meta,
 }
 
-impl Games {
-    pub fn last_created(&self) -> Option<Game> {
-        let mut games = self.data.clone();
-        games.sort_by(|a, b| b.created_at.cmp(&a.created_at));
-        games.first().cloned()
-    }
-}
-
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Game {
@@ -203,34 +194,13 @@ pub struct Game {
     pub average_tier_info: TierInfo,
 
     #[serde(rename = "participants")]
-    pub participants: Vec<MyData>,
+    pub participants: Vec<Participant>,
 
     #[serde(rename = "teams")]
     pub teams: Vec<Team>,
 
-    #[serde(rename = "myData")]
-    pub my_data: MyData,
-}
-
-impl Game {
-    pub fn outcome(&self) -> Outcome {
-        for team in self.teams.iter() {
-            if team.game_stat.is_remake {
-                return Outcome::Remake;
-            }
-            if team.key == self.my_data.team_key && team.game_stat.is_win {
-                return Outcome::Win;
-            }
-        }
-        Outcome::Loss
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
-pub enum Outcome {
-    Remake,
-    Win,
-    Loss,
+    #[serde(rename(serialize = "my_data", deserialize = "myData"))]
+    pub my_data: Participant,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -252,7 +222,7 @@ pub struct TierInfo {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct MyData {
+pub struct Participant {
     #[serde(rename = "summoner")]
     pub summoner: Summoner,
 
@@ -280,8 +250,9 @@ pub struct MyData {
     #[serde(rename = "spells")]
     pub spells: Vec<i64>,
 
+    // FIXME: this is actually NOT OPTIONAL...make it so just to simplify initial tests in `dankcontent` 🥲
     #[serde(rename = "stats")]
-    pub stats: Stats,
+    pub stats: Option<Stats>,
 
     #[serde(rename = "tier_info")]
     pub tier_info: TierInfo,

@@ -1,4 +1,4 @@
-use minijinja::context;
+use minijinja::value::Value;
 use minijinja::Environment;
 use sqlx::SqlitePool;
 use twitch_irc::message::PrivmsgMessage;
@@ -37,14 +37,12 @@ impl<'a> Gg<'a> {
             {
                 [reply] => {
                     let region = Region::Euw;
-                    let summoner = dbg!(op_gg_client::get_summoner(region, "KING CATHED").await.unwrap());
-                    let naive_date_time = chrono::Utc::now().naive_utc();
-                    dbg!(naive_date_time);
-                    let asd = dbg!(op_gg_client::get_games(region, &summoner.summoner_id, None, None)
+                    let summoner = op_gg_client::get_summoner(region, "KING CATHEDRAL").await.unwrap();
+                    let games = op_gg_client::get_games(region, &summoner.summoner_id, None, None)
                         .await
-                        .unwrap());
+                        .unwrap();
 
-                    match reply.render_template(&self.templates_env, Some(&context!(gamba => ""))) {
+                    match reply.render_template(&self.templates_env, Some(&Value::from_serializable(&games))) {
                         Ok(rendered_reply) if rendered_reply.is_empty() => {
                             eprintln!("Rendered reply template empty: {:?}.", reply)
                         }
