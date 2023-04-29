@@ -1,9 +1,10 @@
 use std::fmt::Display;
-use std::time::Duration;
 
 use anyhow::bail;
 use chrono::DateTime;
+use chrono::Duration;
 use chrono::Utc;
+use fake::Dummy;
 use reqwest::Url;
 use serde::Deserialize;
 use serde::Serialize;
@@ -12,7 +13,7 @@ use serde_with::DurationSeconds;
 
 const OP_GG_API: &str = "https://op.gg/api/v1.0/internal/bypass";
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Dummy)]
 pub enum Region {
     Br,
     Eune,
@@ -109,12 +110,12 @@ async fn get_summoners(region: Region, summoner_name: &str) -> anyhow::Result<Su
     Ok(reqwest::get(url).await?.json().await?)
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
 pub struct Summoners {
     pub data: Vec<Summoner>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
 pub struct Summoner {
     #[serde(rename = "id")]
     pub id: i64,
@@ -147,7 +148,7 @@ pub struct Summoner {
     pub solo_tier_info: Option<TierInfo>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
 pub struct Games {
     #[serde(rename = "data")]
     pub data: Vec<Game>,
@@ -157,7 +158,7 @@ pub struct Games {
 }
 
 #[serde_as]
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
 pub struct Game {
     #[serde(rename = "id")]
     pub id: String,
@@ -178,7 +179,7 @@ pub struct Game {
     pub version: String,
 
     #[serde(rename = "game_length_second")]
-    #[serde_as(as = "DurationSeconds<u64>")]
+    #[serde_as(as = "DurationSeconds<i64>")]
     pub duration: Duration,
 
     #[serde(rename = "is_remake")]
@@ -203,7 +204,7 @@ pub struct Game {
     pub my_data: Participant,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
 pub struct TierInfo {
     #[serde(rename = "tier")]
     pub tier: Option<String>,
@@ -221,7 +222,7 @@ pub struct TierInfo {
     pub lp: Option<i64>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
 pub struct Participant {
     #[serde(rename = "summoner")]
     pub summoner: Summoner,
@@ -250,22 +251,21 @@ pub struct Participant {
     #[serde(rename = "spells")]
     pub spells: Vec<i64>,
 
-    // FIXME: this is actually NOT OPTIONAL...make it so just to simplify initial tests in `dankcontent` 🥲
     #[serde(rename = "stats")]
-    pub stats: Option<Stats>,
+    pub stats: Stats,
 
     #[serde(rename = "tier_info")]
     pub tier_info: TierInfo,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Dummy)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TeamKey {
     Red,
     Blue,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
 pub struct Rune {
     #[serde(rename = "primary_page_id")]
     pub primary_page_id: i64,
@@ -277,7 +277,7 @@ pub struct Rune {
     pub secondary_page_id: i64,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
 pub struct Stats {
     #[serde(rename = "champion_level")]
     pub champion_level: i64,
@@ -382,7 +382,7 @@ pub struct Stats {
     pub is_opscore_max_in_team: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
 pub struct QueueInfo {
     #[serde(rename = "id")]
     pub id: i64,
@@ -394,7 +394,7 @@ pub struct QueueInfo {
     pub game_type: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
 pub struct Team {
     #[serde(rename = "key")]
     pub key: TeamKey,
@@ -406,7 +406,7 @@ pub struct Team {
     pub banned_champions: Vec<Option<i64>>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
 pub struct GameStat {
     #[serde(rename = "dragon_kill")]
     pub dragon_kill: i64,
@@ -436,7 +436,7 @@ pub struct GameStat {
     pub gold_earned: i64,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
 pub struct Meta {
     #[serde(rename = "first_game_created_at")]
     pub first_game_created_at: DateTime<Utc>,
