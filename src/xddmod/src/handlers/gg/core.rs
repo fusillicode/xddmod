@@ -1,3 +1,4 @@
+use fake::Dummy;
 use minijinja::value::Value;
 use minijinja::Environment;
 use serde::Deserialize;
@@ -8,7 +9,10 @@ use twitch_irc::message::ServerMessage;
 
 use crate::auth::IRCClient;
 use crate::handlers::gg::op_gg_client;
+use crate::handlers::gg::op_gg_client::Games;
 use crate::handlers::gg::op_gg_client::Region;
+use crate::handlers::gg::riot_client;
+use crate::handlers::gg::riot_client::Champion;
 use crate::handlers::persistence::Handler;
 use crate::handlers::persistence::Reply;
 
@@ -50,8 +54,17 @@ impl<'a> Gg<'a> {
                             op_gg_client::get_games(additional_inputs.region, &summoner.summoner_id, None, None)
                                 .await
                                 .unwrap();
+                        let champions = riot_client::get_champions().await.unwrap();
+                        let champion_id = games.data.first().unwrap().my_data.champion_id;
+                        let champion = champions.get(&champion_id.into()).unwrap();
+                        let template_inputs = TemplateInputs {
+                            champion: champion.clone(),
+                            games,
+                        };
 
-                        match reply.render_template(&self.templates_env, Some(&Value::from_serializable(&games))) {
+                        match reply
+                            .render_template(&self.templates_env, Some(&Value::from_serializable(&template_inputs)))
+                        {
                             Ok(rendered_reply) if rendered_reply.is_empty() => {
                                 eprintln!("Rendered reply template empty: {:?}.", reply)
                             }
@@ -83,8 +96,14 @@ impl<'a> Gg<'a> {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Dummy)]
 pub struct AdditionalInputs {
     pub region: Region,
     pub summoner_name: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Dummy)]
+pub struct TemplateInputs {
+    pub champion: Champion,
+    pub games: Games,
 }
