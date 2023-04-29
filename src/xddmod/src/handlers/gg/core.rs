@@ -1,5 +1,7 @@
 use minijinja::value::Value;
 use minijinja::Environment;
+use serde::Deserialize;
+use serde::Serialize;
 use sqlx::SqlitePool;
 use twitch_irc::message::PrivmsgMessage;
 use twitch_irc::message::ServerMessage;
@@ -36,9 +38,14 @@ impl<'a> Gg<'a> {
             .as_slice()
             {
                 [reply] => {
-                    let region = Region::Euw;
-                    let summoner = op_gg_client::get_summoner(region, "KING CATHEDRAL").await.unwrap();
-                    let games = op_gg_client::get_games(region, &summoner.summoner_id, None, None)
+                    let additional_inputs: AdditionalInputs =
+                        serde_json::from_value(reply.additonal_inputs.clone().unwrap().0).unwrap();
+
+                    let summoner =
+                        op_gg_client::get_summoner(additional_inputs.region, &additional_inputs.summoner_name)
+                            .await
+                            .unwrap();
+                    let games = op_gg_client::get_games(additional_inputs.region, &summoner.summoner_id, None, None)
                         .await
                         .unwrap();
 
@@ -58,4 +65,10 @@ impl<'a> Gg<'a> {
             }
         }
     }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AdditionalInputs {
+    pub region: Region,
+    pub summoner_name: String,
 }

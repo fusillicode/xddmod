@@ -13,7 +13,8 @@ use serde_with::DurationSeconds;
 
 const OP_GG_API: &str = "https://op.gg/api/v1.0/internal/bypass";
 
-#[derive(Clone, Copy, Debug, Dummy)]
+#[derive(Clone, Copy, Debug, Dummy, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Region {
     Br,
     Eune,
