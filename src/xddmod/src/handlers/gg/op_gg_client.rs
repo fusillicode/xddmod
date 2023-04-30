@@ -80,10 +80,12 @@ pub async fn get_games(
     let mut url = Url::parse(&format!("{}/games/{}/summoners/{}", OP_GG_API, region, summoner_id))?;
 
     fn build_query(ended_at: DateTime<Utc>) -> String {
-        format!("game_type=total&ended_at={}", ended_at.format("%Y-%m-%dT%H:%M:%S"))
+        format!("game_type=total&ended_at={}", ended_at.to_rfc3339())
     }
 
-    url.set_query(Some(&build_query(maybe_to.unwrap_or_else(Utc::now))));
+    if let Some(to) = maybe_to {
+        url.set_query(Some(&build_query(to)));
+    }
 
     let mut games: Games = reqwest::get(url.clone()).await?.json().await?;
 
