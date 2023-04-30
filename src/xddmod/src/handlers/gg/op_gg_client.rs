@@ -2,14 +2,13 @@ use std::fmt::Display;
 
 use anyhow::bail;
 use chrono::DateTime;
-use chrono::Duration;
 use chrono::Utc;
 use fake::Dummy;
+use fake::Fake;
+use fake::Faker;
 use reqwest::Url;
 use serde::Deserialize;
 use serde::Serialize;
-use serde_with::serde_as;
-use serde_with::DurationSeconds;
 
 const OP_GG_API: &str = "https://op.gg/api/v1.0/internal/bypass";
 
@@ -138,8 +137,7 @@ pub struct Games {
     pub meta: Meta,
 }
 
-#[serde_as]
-#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Game {
     pub id: String,
     pub memo: Option<serde_json::Value>,
@@ -148,9 +146,8 @@ pub struct Game {
     pub map: String,
     pub queue_info: QueueInfo,
     pub version: String,
-    #[serde(alias = "game_length_second")]
-    #[serde_as(as = "DurationSeconds<i64>")]
-    pub duration: Duration,
+    #[serde(alias = "game_length_second", deserialize_with = "std_duration_from_u64")]
+    pub duration: std::time::Duration,
     pub is_remake: bool,
     pub is_opscore_active: bool,
     pub is_recorded: bool,
@@ -159,6 +156,27 @@ pub struct Game {
     pub teams: Vec<Team>,
     #[serde(alias = "myData")]
     pub my_data: Participant,
+}
+
+impl Dummy<Faker> for Game {
+    fn dummy_with_rng<R: rand::Rng + ?Sized>(_: &Faker, rng: &mut R) -> Self {
+        Self {
+            id: Faker.fake_with_rng(rng),
+            memo: Faker.fake_with_rng(rng),
+            created_at: Faker.fake_with_rng(rng),
+            map: Faker.fake_with_rng(rng),
+            queue_info: Faker.fake_with_rng(rng),
+            version: Faker.fake_with_rng(rng),
+            duration: std::time::Duration::new(Faker.fake_with_rng(rng), Faker.fake_with_rng(rng)),
+            is_remake: Faker.fake_with_rng(rng),
+            is_opscore_active: Faker.fake_with_rng(rng),
+            is_recorded: Faker.fake_with_rng(rng),
+            average_tier_info: Faker.fake_with_rng(rng),
+            participants: Faker.fake_with_rng(rng),
+            teams: Faker.fake_with_rng(rng),
+            my_data: Faker.fake_with_rng(rng),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
@@ -269,4 +287,11 @@ pub struct GameStat {
 pub struct Meta {
     pub first_game_created_at: DateTime<Utc>,
     pub last_game_created_at: DateTime<Utc>,
+}
+
+fn std_duration_from_u64<'de, D>(deserializer: D) -> Result<std::time::Duration, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Ok(std::time::Duration::from_secs(u64::deserialize(deserializer)?))
 }

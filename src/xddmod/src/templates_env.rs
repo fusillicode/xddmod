@@ -52,8 +52,8 @@ fn sub_date_times(from_date_time: &str, to_date_time: &str) -> Result<minijinja:
     Ok(minijinja::value::Value::from_serializable(&time_span))
 }
 
-fn format_duration(time_span: &minijinja::value::Value) -> Result<String, minijinja::Error> {
-    let duration: std::time::Duration = from_json_value(to_json_value(time_span)?)?;
+fn format_duration(duration: &minijinja::value::Value) -> Result<String, minijinja::Error> {
+    let duration: std::time::Duration = from_json_value(to_json_value(duration)?)?;
 
     let mut formatter = timeago::Formatter::new();
     formatter.ago("");
@@ -232,7 +232,7 @@ mod tests {
     fn test_add_duration_works_as_expected() {
         let template = r#"{{ date_time|add_duration(duration) }}"#;
         let template_context = context! {
-                duration => std::time::Duration::from_secs(42),
+                duration => std::time::Duration::new(42, 0),
                 date_time => Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()
         };
         let env = build_global_templates_env();
