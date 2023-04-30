@@ -386,6 +386,29 @@ dependencies = [
 ]
 
 [[package]]
+<<<<<<< HEAD
+=======
+name = "dankcontent"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "fake",
+ "lazy_static",
+ "minijinja",
+ "pomsky-macro",
+ "rand",
+ "regex",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+ "twitch_api2",
+ "xddmod",
+]
+
+[[package]]
+>>>>>>> 971ce61 (Fine tune gg last game template)
 name = "darling"
 version = "0.14.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"

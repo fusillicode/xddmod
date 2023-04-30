@@ -11,12 +11,14 @@ path = "src/lib.rs"
 [dependencies]
 anyhow = { workspace = true }
 axum = "0.6.18"
+chrono = { workspace = true }
 chrono-tz = "0.8.1"
 config = "0.13.3"
 fake = { workspace = true }
-rand = { workspace = true }
 hyper = { version = "0.14.26", features = ["full"] }
+lazy_static = { workspace = true }
 minijinja = { workspace = true }
+rand = { workspace = true }
 regex = { workspace = true }
 reqwest = "0.11.17"
 serde = { workspace = true }
@@ -29,6 +31,3 @@ twitch_api2 = { workspace = true }
 twitch-irc = { version = "5.0.0", features = ["with-serde", "refreshing-token-native-tls"] }
 url = { version = "2.3.1", features = ["serde"] }
 webbrowser = "0.8.9"
-# FIXME: poor man throttling
-lazy_static = { workspace = true }
-chrono = "0.4.24"
