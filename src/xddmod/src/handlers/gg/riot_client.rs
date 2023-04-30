@@ -43,7 +43,7 @@ impl From<i64> for ChampionKey {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Dummy)]
 pub struct ApiResponse {
-    #[serde(rename = "type")]
+    #[serde(alias = "type")]
     pub kind: Kind,
     pub format: String,
     pub version: String,
@@ -86,23 +86,23 @@ pub struct Info {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Dummy)]
 pub enum Kind {
-    #[serde(rename = "champion")]
+    #[serde(alias = "champion")]
     Champion,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Dummy)]
 pub enum Sprite {
-    #[serde(rename = "champion0.png")]
+    #[serde(alias = "champion0.png")]
     Champion0Png,
-    #[serde(rename = "champion1.png")]
+    #[serde(alias = "champion1.png")]
     Champion1Png,
-    #[serde(rename = "champion2.png")]
+    #[serde(alias = "champion2.png")]
     Champion2Png,
-    #[serde(rename = "champion3.png")]
+    #[serde(alias = "champion3.png")]
     Champion3Png,
-    #[serde(rename = "champion4.png")]
+    #[serde(alias = "champion4.png")]
     Champion4Png,
-    #[serde(rename = "champion5.png")]
+    #[serde(alias = "champion5.png")]
     Champion5Png,
 }
 
