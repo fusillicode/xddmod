@@ -25,27 +25,39 @@ pub async fn get_summoner(region: Region, summoner_name: &str) -> anyhow::Result
     }
 }
 
+pub async fn get_last_game(region: Region, summoner_id: &str) -> anyhow::Result<Option<Game>> {
+    let games = get_games(region, summoner_id, None, None, Some(1)).await?;
+
+    Ok(games.data.first().cloned())
+}
+
 pub async fn get_games(
     region: Region,
     summoner_id: &str,
     maybe_from: Option<DateTime<Utc>>,
     maybe_to: Option<DateTime<Utc>>,
+    maybe_limit: Option<i32>,
 ) -> anyhow::Result<Games> {
     let mut url = Url::parse(&format!("{}/games/{}/summoners/{}", OP_GG_API, region, summoner_id))?;
 
-    fn build_query(ended_at: DateTime<Utc>) -> String {
-        format!("game_type=total&ended_at={}", ended_at.to_rfc3339())
+    fn build_query(maybe_to: Option<DateTime<Utc>>, maybe_limit: Option<i32>) -> String {
+        let mut query = "game_type=total".to_owned();
+        if let Some(limit) = maybe_limit {
+            query.push_str(&format!("&limit={}", limit))
+        }
+        if let Some(to) = maybe_to {
+            query.push_str(&format!("&ended_at={}", to.to_rfc3339()))
+        }
+        query
     }
 
-    if let Some(to) = maybe_to {
-        url.set_query(Some(&build_query(to)));
-    }
+    url.set_query(Some(&build_query(maybe_to, maybe_limit)));
 
     let mut games: Games = reqwest::get(url.clone()).await?.json().await?;
 
     if let Some(from) = maybe_from {
         while games.meta.first_game_created_at > from {
-            url.set_query(Some(&build_query(games.meta.last_game_created_at)));
+            url.set_query(Some(&build_query(Some(games.meta.last_game_created_at), None)));
 
             let mut old_games: Games = reqwest::get(url.clone()).await?.json().await?;
 
