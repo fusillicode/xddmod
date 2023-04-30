@@ -27,7 +27,7 @@ sqlx = { workspace = true }
 timeago = "0.4.1"
 tokio = { workspace = true }
 tower = "0.4.13"
-twitch_api2 = { workspace = true }
+twitch_api2 = { version = "0.6.1", features = ["twitch_oauth2", "helix", "reqwest", "time"] }
 twitch-irc = { version = "5.0.0", features = ["with-serde", "refreshing-token-native-tls"] }
 url = { version = "2.3.1", features = ["serde"] }
 webbrowser = "0.8.9"

@@ -2,6 +2,9 @@ use std::time::Duration;
 
 use anyhow::anyhow;
 use anyhow::bail;
+use chrono::DateTime;
+use chrono::TimeZone;
+use chrono::Utc;
 use minijinja::context;
 use minijinja::Environment;
 use serde::Deserialize;
@@ -12,7 +15,6 @@ use twitch_api2::helix::predictions::Prediction;
 use twitch_api2::twitch_oauth2::UserToken;
 use twitch_api2::types::PredictionOutcome;
 use twitch_api2::types::PredictionStatus;
-use twitch_api2::types::Timestamp;
 use twitch_api2::types::UserId;
 use twitch_api2::HelixClient;
 use twitch_irc::message::PrivmsgMessage;
@@ -100,29 +102,22 @@ pub struct Gamba {
     pub sides: Vec<Side>,
     pub state: GambaState,
     pub window: Duration,
-    pub started_at: Timestamp,
-    pub expected_closed_at: Timestamp,
+    pub started_at: DateTime<Utc>,
+    pub expected_closed_at: DateTime<Utc>,
 }
 
 impl TryFrom<Prediction> for Gamba {
     type Error = anyhow::Error;
 
     fn try_from(x: Prediction) -> Result<Self, Self::Error> {
-        let expected_closed_at = {
-            let y = x.created_at.to_fixed_offset() + Duration::from_secs(x.prediction_window as u64);
-
-            Timestamp::try_from(y).map_err(|e| {
-                anyhow!("Cannot build closing_at from created_at {:?} and prediction_window {:?} for prediction {:?}, error {:?}.", x.created_at, x.prediction_window, x, e)
-            })?
-        };
-
         Ok(Self {
             title: x.title.clone(),
             sides: x.outcomes.clone().into_iter().map(Side::from).collect(),
             state: GambaState::try_from(x.clone())?,
             window: Duration::from_secs(x.prediction_window as u64),
-            started_at: x.created_at,
-            expected_closed_at,
+            started_at: Utc.timestamp_nanos(x.created_at.to_utc().unix_timestamp()),
+            expected_closed_at: Utc.timestamp_nanos(x.created_at.to_utc().unix_timestamp())
+                + chrono::Duration::seconds(x.prediction_window),
         })
     }
 }
@@ -150,9 +145,9 @@ impl From<PredictionOutcome> for Side {
 #[serde(tag = "name")]
 pub enum GambaState {
     Up,
-    Closed { closed_at: Timestamp },
-    Payed { winner: Side, payed_at: Timestamp },
-    Refunded { refunded_at: Timestamp },
+    Closed { closed_at: DateTime<Utc> },
+    Payed { winner: Side, payed_at: DateTime<Utc> },
+    Refunded { refunded_at: DateTime<Utc> },
 }
 
 impl TryFrom<Prediction> for GambaState {
@@ -165,6 +160,7 @@ impl TryFrom<Prediction> for GambaState {
                 closed_at: x
                     .clone()
                     .ended_at
+                    .map(|t| Utc.timestamp_nanos(t.to_utc().unix_timestamp()))
                     .ok_or_else(|| anyhow!("Missing ended_at in {:?} prediction {:?}.", x.status, x))?,
             },
             PredictionStatus::Resolved => {
@@ -194,6 +190,7 @@ impl TryFrom<Prediction> for GambaState {
                     payed_at: x
                         .clone()
                         .locked_at
+                        .map(|t| Utc.timestamp_nanos(t.to_utc().unix_timestamp()))
                         .ok_or_else(|| anyhow!("Missing closed_at in {:?} prediction {:?}.", x.status, x))?,
                 }
             }
@@ -201,6 +198,7 @@ impl TryFrom<Prediction> for GambaState {
                 refunded_at: x
                     .clone()
                     .locked_at
+                    .map(|t| Utc.timestamp_nanos(t.to_utc().unix_timestamp()))
                     .ok_or_else(|| anyhow!("Missing locked_at in {:?} prediction {:?}.", x.status, x))?,
             },
             unexpected_variant => bail!("Unexpected variant {:?} for prediction {:?}.", unexpected_variant, x),

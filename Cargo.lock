@@ -403,7 +403,6 @@ dependencies = [
  "serde_json",
  "sqlx",
  "tokio",
- "twitch_api2",
  "xddmod",
 ]
 
