@@ -5,6 +5,9 @@ use anyhow::bail;
 use chrono::DateTime;
 use chrono::TimeZone;
 use chrono::Utc;
+use fake::Dummy;
+use fake::Fake;
+use fake::Faker;
 use minijinja::context;
 use minijinja::Environment;
 use serde::Deserialize;
@@ -106,6 +109,19 @@ pub struct Gamba {
     pub expected_closed_at: DateTime<Utc>,
 }
 
+impl Dummy<Faker> for Gamba {
+    fn dummy_with_rng<R: rand::Rng + ?Sized>(_: &Faker, rng: &mut R) -> Self {
+        Self {
+            title: Faker.fake_with_rng(rng),
+            sides: Faker.fake_with_rng(rng),
+            state: Faker.fake_with_rng(rng),
+            window: std::time::Duration::new(Faker.fake_with_rng(rng), Faker.fake_with_rng(rng)),
+            started_at: Faker.fake_with_rng(rng),
+            expected_closed_at: Faker.fake_with_rng(rng),
+        }
+    }
+}
+
 impl TryFrom<Prediction> for Gamba {
     type Error = anyhow::Error;
 
@@ -122,7 +138,7 @@ impl TryFrom<Prediction> for Gamba {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Dummy)]
 pub struct Side {
     pub title: String,
     pub users: Option<i64>,
@@ -141,7 +157,7 @@ impl From<PredictionOutcome> for Side {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Dummy)]
 #[serde(tag = "name")]
 pub enum GambaState {
     Up,
