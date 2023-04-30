@@ -54,13 +54,11 @@ impl<'a> Gg<'a> {
                             op_gg_client::get_games(additional_inputs.region, &summoner.summoner_id, None, None)
                                 .await
                                 .unwrap();
-                        let champions = riot_client::get_champions().await.unwrap();
-                        let champion_id = games.data.first().unwrap().my_data.champion_id;
-                        let champion = champions.get(&champion_id.into()).unwrap();
-                        let template_inputs = TemplateInputs {
-                            champion: champion.clone(),
-                            games,
+                        let champion = match games.data.first().map(|g| g.my_data.champion_key) {
+                            Some(champion_key) => riot_client::get_champion(champion_key).await.unwrap(),
+                            None => None,
                         };
+                        let template_inputs: TemplateInputs = TemplateInputs { champion, games };
 
                         match reply
                             .render_template(&self.templates_env, Some(&Value::from_serializable(&template_inputs)))
@@ -104,6 +102,6 @@ pub struct AdditionalInputs {
 
 #[derive(Clone, Debug, Serialize, Deserialize, Dummy)]
 pub struct TemplateInputs {
-    pub champion: Champion,
+    pub champion: Option<Champion>,
     pub games: Games,
 }

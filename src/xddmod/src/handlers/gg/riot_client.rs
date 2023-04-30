@@ -6,6 +6,10 @@ use serde::Serialize;
 
 const CHAMPIONS_API: &str = "https://ddragon.leagueoflegends.com/cdn/13.8.1/data/en_US/champion.json";
 
+pub async fn get_champion(champion_key: impl Into<ChampionKey>) -> anyhow::Result<Option<Champion>> {
+    Ok(get_champions().await?.get(&champion_key.into()).cloned())
+}
+
 pub async fn get_champions() -> anyhow::Result<HashMap<ChampionKey, Champion>> {
     let api_response: ApiResponse = reqwest::get(CHAMPIONS_API).await?.json().await?;
 

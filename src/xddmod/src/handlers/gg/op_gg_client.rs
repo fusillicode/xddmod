@@ -232,7 +232,7 @@ pub struct Participant {
     pub participant_id: i64,
 
     #[serde(rename = "champion_id")]
-    pub champion_id: i64,
+    pub champion_key: i64,
 
     #[serde(rename = "team_key")]
     pub team_key: TeamKey,
