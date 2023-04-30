@@ -8,7 +8,6 @@ use chrono::Utc;
 use fake::Dummy;
 use fake::Fake;
 use fake::Faker;
-use minijinja::context;
 use minijinja::Environment;
 use serde::Deserialize;
 use serde::Serialize;
@@ -70,8 +69,11 @@ impl<'a> Gambage<'a> {
 
                     match predictions.first() {
                         Some(prediction) => match Gamba::try_from(prediction.clone()) {
-                            Ok(gamba_data) => {
-                                match reply.render_template(&self.templates_env, Some(&context!(gamba => gamba_data))) {
+                            Ok(gamba) => {
+                                match reply.render_template(
+                                    &self.templates_env,
+                                    Some(&minijinja::value::Value::from_serializable(&gamba)),
+                                ) {
                                     Ok(rendered_reply) if rendered_reply.is_empty() => {
                                         eprintln!("Rendered reply template empty: {:?}.", reply)
                                     }
@@ -104,9 +106,8 @@ pub struct Gamba {
     pub title: String,
     pub sides: Vec<Side>,
     pub state: GambaState,
-    pub window: Duration,
+    pub duration: Duration,
     pub started_at: DateTime<Utc>,
-    pub expected_closed_at: DateTime<Utc>,
 }
 
 impl Dummy<Faker> for Gamba {
@@ -115,9 +116,8 @@ impl Dummy<Faker> for Gamba {
             title: Faker.fake_with_rng(rng),
             sides: Faker.fake_with_rng(rng),
             state: Faker.fake_with_rng(rng),
-            window: std::time::Duration::new(Faker.fake_with_rng(rng), Faker.fake_with_rng(rng)),
+            duration: std::time::Duration::new(Faker.fake_with_rng(rng), Faker.fake_with_rng(rng)),
             started_at: Faker.fake_with_rng(rng),
-            expected_closed_at: Faker.fake_with_rng(rng),
         }
     }
 }
@@ -130,10 +130,8 @@ impl TryFrom<Prediction> for Gamba {
             title: x.title.clone(),
             sides: x.outcomes.clone().into_iter().map(Side::from).collect(),
             state: GambaState::try_from(x.clone())?,
-            window: Duration::from_secs(x.prediction_window as u64),
+            duration: Duration::from_secs(x.prediction_window as u64),
             started_at: Utc.timestamp_nanos(x.created_at.to_utc().unix_timestamp()),
-            expected_closed_at: Utc.timestamp_nanos(x.created_at.to_utc().unix_timestamp())
-                + chrono::Duration::seconds(x.prediction_window),
         })
     }
 }
