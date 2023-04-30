@@ -69,8 +69,8 @@ fn wrap_string(string: &str, wrapping: &str) -> Result<String, minijinja::Error>
 
 fn add_duration(date_time: &str, duration: &minijinja::value::Value) -> Result<String, minijinja::Error> {
     let date_time = parse_date_time_from_rfc3339(date_time)?;
-    let duration: std::time::Duration = from_json_value(to_json_value(duration)?)?;
-    let duration = chrono::Duration::from_std(duration).map_err(|e| {
+    let std_duration: std::time::Duration = from_json_value(to_json_value(duration)?)?;
+    let duration = chrono::Duration::from_std(std_duration).map_err(|e| {
         minijinja::Error::new(
             ErrorKind::InvalidOperation,
             format!(
