@@ -13,51 +13,6 @@ use serde_with::DurationSeconds;
 
 const OP_GG_API: &str = "https://op.gg/api/v1.0/internal/bypass";
 
-#[derive(Clone, Copy, Debug, Dummy, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Region {
-    Br,
-    Eune,
-    Euw,
-    Jp,
-    Kr,
-    Lan,
-    Las,
-    Na,
-    Oce,
-    Ph,
-    Ru,
-    Sg,
-    Th,
-    Tr,
-    Tw,
-    Vn,
-}
-
-impl Display for Region {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            Region::Br => "br",
-            Region::Eune => "eune",
-            Region::Euw => "euw",
-            Region::Jp => "jp",
-            Region::Kr => "kr",
-            Region::Lan => "lan",
-            Region::Las => "las",
-            Region::Na => "na",
-            Region::Oce => "oce",
-            Region::Ph => "ph",
-            Region::Ru => "ru",
-            Region::Sg => "sg",
-            Region::Th => "th",
-            Region::Tr => "tr",
-            Region::Tw => "tw",
-            Region::Vn => "vn",
-        };
-        write!(f, "{}", s)
-    }
-}
-
 pub async fn get_summoner(region: Region, summoner_name: &str) -> anyhow::Result<Summoner> {
     match &get_summoners(region, summoner_name).await?.data[..] {
         [summoner] => Ok(summoner.clone()),
@@ -111,6 +66,51 @@ async fn get_summoners(region: Region, summoner_name: &str) -> anyhow::Result<Su
     url.set_query(Some(&format!("keyword={}", summoner_name)));
 
     Ok(reqwest::get(url).await?.json().await?)
+}
+
+#[derive(Clone, Copy, Debug, Dummy, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Region {
+    Br,
+    Eune,
+    Euw,
+    Jp,
+    Kr,
+    Lan,
+    Las,
+    Na,
+    Oce,
+    Ph,
+    Ru,
+    Sg,
+    Th,
+    Tr,
+    Tw,
+    Vn,
+}
+
+impl Display for Region {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Region::Br => "br",
+            Region::Eune => "eune",
+            Region::Euw => "euw",
+            Region::Jp => "jp",
+            Region::Kr => "kr",
+            Region::Lan => "lan",
+            Region::Las => "las",
+            Region::Na => "na",
+            Region::Oce => "oce",
+            Region::Ph => "ph",
+            Region::Ru => "ru",
+            Region::Sg => "sg",
+            Region::Th => "th",
+            Region::Tr => "tr",
+            Region::Tw => "tw",
+            Region::Vn => "vn",
+        };
+        write!(f, "{}", s)
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
