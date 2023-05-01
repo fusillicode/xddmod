@@ -8,9 +8,9 @@ use twitch_irc::message::PrivmsgMessage;
 use twitch_irc::message::ServerMessage;
 
 use crate::apis::ddragon;
-use crate::apis::ddragon::Champion;
+use crate::apis::ddragon::champions::Champion;
 use crate::apis::op_gg;
-use crate::apis::op_gg::Game;
+use crate::apis::op_gg::games::Game;
 use crate::apis::op_gg::Region;
 use crate::auth::IRCClient;
 use crate::handlers::persistence::Handler;
@@ -62,16 +62,21 @@ impl<'a> Gg<'a> {
 
                     match serde_json::from_value::<AdditionalInputs>(additional_inputs.0.clone()) {
                         Ok(additional_inputs) => {
-                            let summoner =
-                                op_gg::get_summoner(additional_inputs.region, &additional_inputs.summoner_name)
+                            let summoner = op_gg::summoners::get_summoner(
+                                additional_inputs.region,
+                                &additional_inputs.summoner_name,
+                            )
+                            .await
+                            .unwrap();
+                            if let Some(game) =
+                                op_gg::games::get_last_game(additional_inputs.region, &summoner.summoner_id)
                                     .await
-                                    .unwrap();
-                            if let Some(game) = op_gg::get_last_game(additional_inputs.region, &summoner.summoner_id)
-                                .await
-                                .unwrap()
+                                    .unwrap()
                             {
                                 let template_inputs: TemplateInputs = TemplateInputs {
-                                    champion: ddragon::get_champion(game.my_data.champion_key).await.unwrap(),
+                                    champion: ddragon::champions::get_champion(game.my_data.champion_key)
+                                        .await
+                                        .unwrap(),
                                     game,
                                 };
 
