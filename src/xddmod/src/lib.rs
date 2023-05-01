@@ -1,3 +1,4 @@
+pub mod apis;
 pub mod app_config;
 pub mod auth;
 pub mod handlers;

@@ -7,28 +7,24 @@ use sqlx::SqlitePool;
 use twitch_irc::message::PrivmsgMessage;
 use twitch_irc::message::ServerMessage;
 
-use crate::apis::op_gg;
-use crate::apis::op_gg::Game;
 use crate::apis::op_gg::Region;
-use crate::apis::ddragon;
-use crate::apis::ddragon::Champion;
 use crate::auth::IRCClient;
 use crate::handlers::persistence::Handler;
 use crate::handlers::persistence::Reply;
 
-pub struct Gg<'a> {
+pub struct Sniffa<'a> {
     pub irc_client: IRCClient,
     pub db_pool: SqlitePool,
     pub templates_env: Environment<'a>,
 }
 
-impl<'a> Gg<'a> {
+impl<'a> Sniffa<'a> {
     pub fn handler(&self) -> Handler {
-        Handler::Gg
+        Handler::Sniffa
     }
 }
 
-impl<'a> Gg<'a> {
+impl<'a> Sniffa<'a> {
     pub async fn handle(&self, server_message: &ServerMessage) {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
             match Reply::matching(
@@ -46,32 +42,16 @@ impl<'a> Gg<'a> {
                     ..
                 }] => match serde_json::from_value::<AdditionalInputs>(additional_inputs.0.clone()) {
                     Ok(additional_inputs) => {
-                        let summoner =
-                            op_gg::get_summoner(additional_inputs.region, &additional_inputs.summoner_name)
-                                .await
-                                .unwrap();
-                        if let Some(game) = op_gg::get_last_game(additional_inputs.region, &summoner.summoner_id)
-                            .await
-                            .unwrap()
+                        match reply
+                            .render_template(&self.templates_env, Some(&Value::from_serializable(&additional_inputs)))
                         {
-                            let template_inputs: TemplateInputs = TemplateInputs {
-                                champion: ddragon::get_champion(game.my_data.champion_key).await.unwrap(),
-                                game,
-                            };
-
-                            match reply
-                                .render_template(&self.templates_env, Some(&Value::from_serializable(&template_inputs)))
-                            {
-                                Ok(rendered_reply) if rendered_reply.is_empty() => {
-                                    eprintln!("Rendered reply template empty: {:?}.", reply)
-                                }
-                                Ok(rendered_reply) => {
-                                    self.irc_client.say_in_reply_to(message, rendered_reply).await.unwrap()
-                                }
-                                Err(e) => eprintln!("Error rendering reply template, error: {:?}, {:?}.", reply, e),
+                            Ok(rendered_reply) if rendered_reply.is_empty() => {
+                                eprintln!("Rendered reply template empty: {:?}.", reply)
                             }
-                        } else {
-                            eprintln!("No games returned for reply: {:?}.", reply)
+                            Ok(rendered_reply) => {
+                                self.irc_client.say_in_reply_to(message, rendered_reply).await.unwrap()
+                            }
+                            Err(e) => eprintln!("Error rendering reply template, error: {:?}, {:?}.", reply, e),
                         }
                     }
                     Err(error) => eprintln!(
@@ -100,10 +80,4 @@ impl<'a> Gg<'a> {
 pub struct AdditionalInputs {
     pub region: Region,
     pub summoner_name: String,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, Dummy)]
-pub struct TemplateInputs {
-    pub champion: Option<Champion>,
-    pub game: Game,
 }

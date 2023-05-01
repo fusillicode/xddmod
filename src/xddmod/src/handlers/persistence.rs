@@ -107,4 +107,5 @@ pub enum Handler {
     Npc,
     Gamba,
     Gg,
+    Sniffa,
 }
