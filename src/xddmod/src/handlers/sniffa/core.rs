@@ -7,10 +7,15 @@ use sqlx::SqlitePool;
 use twitch_irc::message::PrivmsgMessage;
 use twitch_irc::message::ServerMessage;
 
+use crate::apis::op_gg;
+use crate::apis::op_gg::spectate::get_spectate_status;
+use crate::apis::op_gg::spectate::SpectateStatus;
+use crate::apis::op_gg::summoners::Summoner;
 use crate::apis::op_gg::Region;
 use crate::auth::IRCClient;
 use crate::handlers::persistence::Handler;
 use crate::handlers::persistence::Reply;
+use crate::poor_man_throttling;
 
 pub struct Sniffa<'a> {
     pub irc_client: IRCClient,
@@ -40,25 +45,58 @@ impl<'a> Sniffa<'a> {
                 [reply @ Reply {
                     additional_inputs: Some(additional_inputs),
                     ..
-                }] => match serde_json::from_value::<AdditionalInputs>(additional_inputs.0.clone()) {
-                    Ok(additional_inputs) => {
-                        match reply
-                            .render_template(&self.templates_env, Some(&Value::from_serializable(&additional_inputs)))
-                        {
-                            Ok(rendered_reply) if rendered_reply.is_empty() => {
-                                eprintln!("Rendered reply template empty: {:?}.", reply)
-                            }
-                            Ok(rendered_reply) => {
-                                self.irc_client.say_in_reply_to(message, rendered_reply).await.unwrap()
-                            }
-                            Err(e) => eprintln!("Error rendering reply template, error: {:?}, {:?}.", reply, e),
+                }] => {
+                    match poor_man_throttling::should_throttle(message, reply) {
+                        Ok(false) => (),
+                        Ok(true) => {
+                            eprintln!(
+                                "Skipping reply: message {:?}, sender {:?}, reply {:?}",
+                                message.message_text, message.sender, reply.template
+                            );
+                            return;
+                        }
+                        Err(error) => {
+                            eprintln!("Error throttling, error: {:?}", error);
                         }
                     }
-                    Err(error) => eprintln!(
-                        "Error deserializing AdditionalInputs from Reply for ServerMessage: {:?}, {:?}, {:?}.",
-                        error, server_message, reply
-                    ),
-                },
+
+                    match serde_json::from_value::<AdditionalInputs>(additional_inputs.0.clone()) {
+                        Ok(additional_inputs) => {
+                            let summoner = op_gg::summoners::get_summoner(
+                                additional_inputs.region,
+                                &additional_inputs.summoner_name,
+                            )
+                            .await
+                            .unwrap();
+
+                            let spectate_status = get_spectate_status(additional_inputs.region, &summoner.summoner_id)
+                                .await
+                                .unwrap();
+
+                            let template_inputs = TemplateInputs {
+                                summoner,
+                                spectate_status,
+                            };
+
+                            match reply
+                                .render_template(&self.templates_env, Some(&Value::from_serializable(&template_inputs)))
+                            {
+                                Ok(rendered_reply) if rendered_reply.is_empty() => {
+                                    eprintln!("Rendered reply template empty: {:?}.", reply)
+                                }
+                                Ok(rendered_reply) => {
+                                    self.irc_client.say_in_reply_to(message, rendered_reply).await.unwrap()
+                                }
+                                Err(e) => eprintln!("Error rendering reply template, error: {:?}, {:?}.", reply, e),
+                            }
+                        }
+                        Err(error) => eprintln!(
+                            "Error deserializing AdditionalInputs from Reply for ServerMessage: {:?}, {:?}, {:?}.",
+                            error, server_message, reply
+                        ),
+                    }
+                }
+
                 [reply @ Reply {
                     additional_inputs: None,
                     ..
@@ -80,4 +118,10 @@ impl<'a> Sniffa<'a> {
 pub struct AdditionalInputs {
     pub region: Region,
     pub summoner_name: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Dummy)]
+pub struct TemplateInputs {
+    pub summoner: Summoner,
+    pub spectate_status: SpectateStatus,
 }

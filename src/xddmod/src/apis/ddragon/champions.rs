@@ -17,11 +17,7 @@ pub async fn get_champions() -> anyhow::Result<HashMap<ChampionKey, Champion>> {
         .json()
         .await?;
 
-    Ok(api_response
-        .data
-        .into_values()
-        .map(|c| (ChampionKey(c.key.clone()), c))
-        .collect())
+    Ok(api_response.data.into_values().map(|c| (c.key.clone(), c)).collect())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Dummy)]
@@ -37,7 +33,7 @@ pub struct ApiResponse {
 pub struct Champion {
     pub version: String,
     pub id: String,
-    pub key: String,
+    pub key: ChampionKey,
     pub name: String,
     pub title: String,
     pub blurb: String,

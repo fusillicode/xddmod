@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use chrono::DateTime;
 use chrono::Utc;
+use fake::Dummy;
 use reqwest::Url;
 use serde::Deserialize;
 use serde::Serialize;
@@ -19,128 +20,135 @@ pub async fn get_spectate_status(region: Region, summoner_id: &str) -> anyhow::R
     Ok(spectate_status)
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Dummy)]
 #[serde(untagged)]
 pub enum SpectateStatus {
     NotInGame(NotInGame),
     InGame(InGame),
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Dummy)]
 pub struct NotInGame {
-    code: i64,
-    message: String,
-    detail: Detail,
+    pub code: i64,
+    pub message: String,
+    pub detail: Detail,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Dummy)]
 pub struct Detail {
-    param: String,
+    pub param: String,
     #[serde(alias = "detailMessage")]
-    detail_message: String,
+    pub detail_message: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Dummy)]
 pub struct InGame {
-    data: Game,
+    pub data: Game,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Dummy)]
 pub struct Game {
-    game_id: String,
-    created_at: DateTime<Utc>,
+    pub game_id: String,
+    pub created_at: DateTime<Utc>,
     #[serde(alias = "game_map")]
-    map: String,
-    queue_info: QueueInfo,
-    record_status: String,
-    participants: Vec<Participant>,
-    teams: Vec<Team>,
+    pub map: String,
+    pub queue_info: QueueInfo,
+    pub record_status: String,
+    pub participants: Vec<Participant>,
+    pub teams: Vec<Team>,
     #[serde(alias = "championsById")]
-    champions_by_key: HashMap<ChampionKey, Champion>,
-    seasons: Vec<Season>,
+    pub champions_by_key: HashMap<ChampionKey, Champion>,
+    pub seasons: Vec<Season>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Dummy)]
 pub struct Champion {
-    #[serde(rename = "key")]
-    name: String,
+    #[serde(rename(deserialize = "key"))]
+    pub name: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Dummy)]
 pub struct Participant {
-    summoner: Summoner,
-    team_key: TeamKey,
-    #[serde(alias = "champion_id")]
-    champion_key: i64,
-    position: String,
-    rune_build: RuneBuild,
-    spells: Vec<i64>,
-    most_champion_stat: Option<HashMap<String, i64>>,
+    pub summoner: Summoner,
+    pub team_key: TeamKey,
+    #[serde(alias = "champion_id", deserialize_with = "champion_key_from_i64")]
+    pub champion_key: ChampionKey,
+    pub position: String,
+    pub rune_build: RuneBuild,
+    pub spells: Vec<i64>,
+    pub most_champion_stat: Option<HashMap<String, i64>>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Dummy)]
 pub struct Summoner {
-    id: i64,
-    summoner_id: String,
-    acct_id: String,
-    puuid: String,
-    name: String,
-    internal_name: String,
-    profile_image_url: String,
-    level: i64,
-    updated_at: DateTime<Utc>,
-    team_info: Option<serde_json::Value>,
-    previous_seasons: Vec<PreviousSeason>,
-    league_stats: Vec<LeagueStat>,
+    pub id: i64,
+    pub summoner_id: String,
+    pub acct_id: String,
+    pub puuid: String,
+    pub name: String,
+    pub internal_name: String,
+    pub profile_image_url: String,
+    pub level: i64,
+    pub updated_at: DateTime<Utc>,
+    pub team_info: Option<serde_json::Value>,
+    pub previous_seasons: Vec<PreviousSeason>,
+    pub league_stats: Vec<LeagueStat>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Dummy)]
 pub struct RuneBuild {
-    primary_page_id: i64,
-    primary_rune_ids: Vec<i64>,
-    secondary_page_id: i64,
-    secondary_rune_ids: Vec<i64>,
-    stat_mod_ids: Vec<i64>,
+    pub primary_page_id: i64,
+    pub primary_rune_ids: Vec<i64>,
+    pub secondary_page_id: i64,
+    pub secondary_rune_ids: Vec<i64>,
+    pub stat_mod_ids: Vec<i64>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Dummy)]
 pub struct LeagueStat {
-    queue_info: QueueInfo,
-    tier_info: TierInfo,
-    win: i64,
-    lose: i64,
-    is_hot_streak: bool,
-    is_fresh_blood: bool,
-    is_veteran: bool,
-    is_inactive: bool,
-    series: Option<serde_json::Value>,
-    updated_at: DateTime<Utc>,
+    pub queue_info: QueueInfo,
+    pub tier_info: TierInfo,
+    pub win: i64,
+    pub lose: i64,
+    pub is_hot_streak: bool,
+    pub is_fresh_blood: bool,
+    pub is_veteran: bool,
+    pub is_inactive: bool,
+    pub series: Option<serde_json::Value>,
+    pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Dummy)]
 pub struct QueueInfo {
-    id: i64,
-    game_type: String,
+    pub id: i64,
+    pub game_type: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Dummy)]
 pub struct PreviousSeason {
-    season_id: i64,
-    tier_info: TierInfo,
-    created_at: DateTime<Utc>,
+    pub season_id: i64,
+    pub tier_info: TierInfo,
+    pub created_at: DateTime<Utc>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Dummy)]
 pub struct Season {
-    id: i64,
-    value: i64,
-    display_value: i64,
-    is_preseason: bool,
+    pub id: i64,
+    pub value: i64,
+    pub display_value: i64,
+    pub is_preseason: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Dummy)]
 pub struct Team {
-    key: TeamKey,
-    average_tier_info: TierInfo,
-    banned_champions: Vec<Option<serde_json::Value>>,
+    pub key: TeamKey,
+    pub average_tier_info: TierInfo,
+    pub banned_champions: Vec<Option<serde_json::Value>>,
+}
+
+fn champion_key_from_i64<'de, D>(deserializer: D) -> Result<ChampionKey, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Ok(ChampionKey::from(i64::deserialize(deserializer)?))
 }

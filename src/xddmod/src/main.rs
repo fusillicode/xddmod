@@ -3,6 +3,7 @@ use xddmod::app_config::AppConfig;
 use xddmod::auth;
 use xddmod::handlers::gg::core::Gg;
 use xddmod::handlers::npc::core::Npc;
+use xddmod::handlers::sniffa::core::Sniffa;
 
 #[tokio::main]
 async fn main() {
@@ -25,6 +26,11 @@ async fn main() {
         templates_env: templates_env.clone(),
     };
     let gg = Gg {
+        irc_client: irc_client.clone(),
+        db_pool: db_pool.clone(),
+        templates_env: templates_env.clone(),
+    };
+    let sniffa = Sniffa {
         irc_client,
         db_pool,
         templates_env,
@@ -35,6 +41,7 @@ async fn main() {
         while let Some(server_message) = incoming_messages.recv().await {
             npc.handle(&server_message).await;
             gg.handle(&server_message).await;
+            sniffa.handle(&server_message).await;
         }
     })
     .await
