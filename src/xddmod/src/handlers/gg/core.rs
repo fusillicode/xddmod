@@ -7,14 +7,15 @@ use sqlx::SqlitePool;
 use twitch_irc::message::PrivmsgMessage;
 use twitch_irc::message::ServerMessage;
 
+use crate::apis::ddragon;
+use crate::apis::ddragon::Champion;
 use crate::apis::op_gg;
 use crate::apis::op_gg::Game;
 use crate::apis::op_gg::Region;
-use crate::apis::ddragon;
-use crate::apis::ddragon::Champion;
 use crate::auth::IRCClient;
 use crate::handlers::persistence::Handler;
 use crate::handlers::persistence::Reply;
+use crate::poor_man_throttling::should_throttle;
 
 pub struct Gg<'a> {
     pub irc_client: IRCClient,
@@ -44,41 +45,58 @@ impl<'a> Gg<'a> {
                 [reply @ Reply {
                     additional_inputs: Some(additional_inputs),
                     ..
-                }] => match serde_json::from_value::<AdditionalInputs>(additional_inputs.0.clone()) {
-                    Ok(additional_inputs) => {
-                        let summoner =
-                            op_gg::get_summoner(additional_inputs.region, &additional_inputs.summoner_name)
-                                .await
-                                .unwrap();
-                        if let Some(game) = op_gg::get_last_game(additional_inputs.region, &summoner.summoner_id)
-                            .await
-                            .unwrap()
-                        {
-                            let template_inputs: TemplateInputs = TemplateInputs {
-                                champion: ddragon::get_champion(game.my_data.champion_key).await.unwrap(),
-                                game,
-                            };
-
-                            match reply
-                                .render_template(&self.templates_env, Some(&Value::from_serializable(&template_inputs)))
-                            {
-                                Ok(rendered_reply) if rendered_reply.is_empty() => {
-                                    eprintln!("Rendered reply template empty: {:?}.", reply)
-                                }
-                                Ok(rendered_reply) => {
-                                    self.irc_client.say_in_reply_to(message, rendered_reply).await.unwrap()
-                                }
-                                Err(e) => eprintln!("Error rendering reply template, error: {:?}, {:?}.", reply, e),
-                            }
-                        } else {
-                            eprintln!("No games returned for reply: {:?}.", reply)
+                }] => {
+                    match should_throttle(message, reply) {
+                        Ok(false) => (),
+                        Ok(true) => {
+                            eprintln!(
+                                "Skipping reply: message {:?}, sender {:?}, reply {:?}",
+                                message.message_text, message.sender, reply.template
+                            );
+                            return;
+                        }
+                        Err(error) => {
+                            eprintln!("Error throttling, error: {:?}", error);
                         }
                     }
-                    Err(error) => eprintln!(
-                        "Error deserializing AdditionalInputs from Reply for ServerMessage: {:?}, {:?}, {:?}.",
-                        error, server_message, reply
-                    ),
-                },
+
+                    match serde_json::from_value::<AdditionalInputs>(additional_inputs.0.clone()) {
+                        Ok(additional_inputs) => {
+                            let summoner =
+                                op_gg::get_summoner(additional_inputs.region, &additional_inputs.summoner_name)
+                                    .await
+                                    .unwrap();
+                            if let Some(game) = op_gg::get_last_game(additional_inputs.region, &summoner.summoner_id)
+                                .await
+                                .unwrap()
+                            {
+                                let template_inputs: TemplateInputs = TemplateInputs {
+                                    champion: ddragon::get_champion(game.my_data.champion_key).await.unwrap(),
+                                    game,
+                                };
+
+                                match reply.render_template(
+                                    &self.templates_env,
+                                    Some(&Value::from_serializable(&template_inputs)),
+                                ) {
+                                    Ok(rendered_reply) if rendered_reply.is_empty() => {
+                                        eprintln!("Rendered reply template empty: {:?}.", reply)
+                                    }
+                                    Ok(rendered_reply) => {
+                                        self.irc_client.say_in_reply_to(message, rendered_reply).await.unwrap()
+                                    }
+                                    Err(e) => eprintln!("Error rendering reply template, error: {:?}, {:?}.", reply, e),
+                                }
+                            } else {
+                                eprintln!("No games returned for reply: {:?}.", reply)
+                            }
+                        }
+                        Err(error) => eprintln!(
+                            "Error deserializing AdditionalInputs from Reply for ServerMessage: {:?}, {:?}, {:?}.",
+                            error, server_message, reply
+                        ),
+                    }
+                }
                 [reply @ Reply {
                     additional_inputs: None,
                     ..

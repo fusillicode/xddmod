@@ -7,6 +7,7 @@ use twitch_irc::message::ServerMessage;
 use crate::auth::IRCClient;
 use crate::handlers::persistence::Handler;
 use crate::handlers::persistence::Reply;
+use crate::poor_man_throttling::should_throttle;
 
 pub struct Npc<'a> {
     pub you: String,
@@ -66,39 +67,4 @@ impl<'a> Npc<'a> {
             }
         }
     }
-}
-
-// FIXME: poor man throttling
-lazy_static::lazy_static! {
-    static ref THROTTLE: std::sync::Mutex<
-        std::collections::BTreeMap<i64, sqlx::types::chrono::DateTime<sqlx::types::chrono::Utc>>
-    >  = std::sync::Mutex::new(std::collections::BTreeMap::new());
-}
-
-fn should_throttle(message: &PrivmsgMessage, reply: &Reply) -> anyhow::Result<bool> {
-    if message
-        .badges
-        .iter()
-        .any(|b| b.name == "moderator" || b.name == "broadcaster")
-    {
-        return Ok(false);
-    }
-
-    let mut throttle = THROTTLE
-        .lock()
-        .map_err(|error| anyhow::anyhow!("Cannot get THROTTLE Lock, error: {:?}", error))?;
-
-    let throttling = throttle
-        .get(&reply.id)
-        .map(|last_reply_date_time| {
-            let time_passed = sqlx::types::chrono::Utc::now() - *last_reply_date_time;
-            time_passed < chrono::Duration::seconds(20)
-        })
-        .unwrap_or_default();
-
-    if !throttling {
-        throttle.insert(reply.id, sqlx::types::chrono::Utc::now());
-    }
-
-    Ok(throttling)
 }
