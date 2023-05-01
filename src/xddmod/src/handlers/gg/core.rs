@@ -15,7 +15,7 @@ use crate::apis::op_gg::Region;
 use crate::auth::IRCClient;
 use crate::handlers::persistence::Handler;
 use crate::handlers::persistence::Reply;
-use crate::poor_man_throttling::should_throttle;
+use crate::poor_man_throttling;
 
 pub struct Gg<'a> {
     pub irc_client: IRCClient,
@@ -46,7 +46,7 @@ impl<'a> Gg<'a> {
                     additional_inputs: Some(additional_inputs),
                     ..
                 }] => {
-                    match should_throttle(message, reply) {
+                    match poor_man_throttling::should_throttle(message, reply) {
                         Ok(false) => (),
                         Ok(true) => {
                             eprintln!(
@@ -68,12 +68,13 @@ impl<'a> Gg<'a> {
                             )
                             .await
                             .unwrap();
+
                             if let Some(game) =
                                 op_gg::games::get_last_game(additional_inputs.region, &summoner.summoner_id)
                                     .await
                                     .unwrap()
                             {
-                                let template_inputs: TemplateInputs = TemplateInputs {
+                                let template_inputs = TemplateInputs {
                                     champion: ddragon::champions::get_champion(game.my_data.champion_key)
                                         .await
                                         .unwrap(),

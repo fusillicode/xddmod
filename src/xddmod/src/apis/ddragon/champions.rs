@@ -4,6 +4,7 @@ use fake::Dummy;
 use serde::Deserialize;
 use serde::Serialize;
 
+use crate::apis::ddragon::ChampionKey;
 use crate::apis::ddragon::DDRAGON_API;
 
 pub async fn get_champion(champion_key: impl Into<ChampionKey>) -> anyhow::Result<Option<Champion>> {
@@ -21,27 +22,6 @@ pub async fn get_champions() -> anyhow::Result<HashMap<ChampionKey, Champion>> {
         .into_values()
         .map(|c| (ChampionKey(c.key.clone()), c))
         .collect())
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Dummy)]
-pub struct ChampionKey(String);
-
-impl From<String> for ChampionKey {
-    fn from(value: String) -> Self {
-        Self(value)
-    }
-}
-
-impl From<&str> for ChampionKey {
-    fn from(value: &str) -> Self {
-        Self(value.into())
-    }
-}
-
-impl From<i64> for ChampionKey {
-    fn from(value: i64) -> Self {
-        Self(value.to_string())
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Dummy)]

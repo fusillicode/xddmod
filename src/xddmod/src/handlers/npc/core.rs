@@ -7,7 +7,7 @@ use twitch_irc::message::ServerMessage;
 use crate::auth::IRCClient;
 use crate::handlers::persistence::Handler;
 use crate::handlers::persistence::Reply;
-use crate::poor_man_throttling::should_throttle;
+use crate::poor_man_throttling;
 
 pub struct Npc<'a> {
     pub you: String,
@@ -37,7 +37,7 @@ impl<'a> Npc<'a> {
             {
                 [reply] => {
                     // FIXME: poor man throttling
-                    match should_throttle(message, reply) {
+                    match poor_man_throttling::should_throttle(message, reply) {
                         Ok(false) => (),
                         Ok(true) => {
                             eprintln!(

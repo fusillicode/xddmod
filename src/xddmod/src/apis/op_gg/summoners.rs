@@ -7,6 +7,7 @@ use serde::Deserialize;
 use serde::Serialize;
 
 use crate::apis::op_gg::Region;
+use crate::apis::op_gg::TierInfo;
 use crate::apis::op_gg::OP_GG_API;
 
 pub async fn get_summoner(region: Region, summoner_name: &str) -> anyhow::Result<Summoner> {
@@ -46,13 +47,4 @@ pub struct Summoner {
     pub level: i64,
     pub updated_at: DateTime<Utc>,
     pub solo_tier_info: Option<TierInfo>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
-pub struct TierInfo {
-    pub tier: Option<String>,
-    pub division: Option<i64>,
-    pub tier_image_url: String,
-    pub border_image_url: Option<String>,
-    pub lp: Option<i64>,
 }

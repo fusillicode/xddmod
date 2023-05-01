@@ -5,7 +5,10 @@ use serde::Deserialize;
 use serde::Serialize;
 
 pub mod games;
+pub mod spectate;
 pub mod summoners;
+
+pub const OP_GG_API: &str = "https://op.gg/api/v1.0/internal/bypass";
 
 #[derive(Clone, Copy, Debug, Dummy, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -52,4 +55,18 @@ impl fmt::Display for Region {
     }
 }
 
-pub const OP_GG_API: &str = "https://op.gg/api/v1.0/internal/bypass";
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Dummy)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum TeamKey {
+    Red,
+    Blue,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
+pub struct TierInfo {
+    pub tier: Option<String>,
+    pub division: Option<i64>,
+    pub tier_image_url: String,
+    pub border_image_url: Option<String>,
+    pub lp: Option<i64>,
+}

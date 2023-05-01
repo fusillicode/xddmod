@@ -9,6 +9,8 @@ use serde::Serialize;
 
 use crate::apis::op_gg::summoners::Summoner;
 use crate::apis::op_gg::Region;
+use crate::apis::op_gg::TeamKey;
+use crate::apis::op_gg::TierInfo;
 use crate::apis::op_gg::OP_GG_API;
 
 pub async fn get_last_game(region: Region, summoner_id: &str) -> anyhow::Result<Option<Game>> {
@@ -107,15 +109,6 @@ impl Dummy<Faker> for Game {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
-pub struct TierInfo {
-    pub tier: Option<String>,
-    pub division: Option<i64>,
-    pub tier_image_url: String,
-    pub border_image_url: Option<String>,
-    pub lp: Option<i64>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
 pub struct Participant {
     pub summoner: Summoner,
     pub participant_id: i64,
@@ -129,13 +122,6 @@ pub struct Participant {
     pub spells: Vec<i64>,
     pub stats: Stats,
     pub tier_info: TierInfo,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Dummy)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum TeamKey {
-    Red,
-    Blue,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
