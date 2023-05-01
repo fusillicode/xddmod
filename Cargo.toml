@@ -4,6 +4,7 @@ members = ["src/*"]
 
 [workspace.dependencies]
 anyhow = "1.0.71"
+chrono = "0.4.24"
 fake = { git = "https://github.com/cksac/fake-rs", rev = "1c26a39", features = ["derive", "chrono", "serde_json"] }
 lazy_static = "1.4.0"
 minijinja = "0.32.1"
@@ -13,5 +14,3 @@ serde = "1.0.160"
 serde_json = "1.0.96"
 sqlx = { version = "0.6.3", features = ["runtime-tokio-native-tls", "uuid", "json", "chrono", "sqlite", "offline", "migrate"] }
 tokio = { version = "1.28.0", features = ["full"] }
-# FIXME: this could probably be removed with some refactoring
-twitch_api2 = { version = "0.6.1", features = ["twitch_oauth2", "helix", "reqwest", "time"] }

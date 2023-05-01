@@ -1,3 +1,4 @@
+use fake::Dummy;
 use minijinja::value::Value;
 use minijinja::Environment;
 use serde::Deserialize;
@@ -8,7 +9,10 @@ use twitch_irc::message::ServerMessage;
 
 use crate::auth::IRCClient;
 use crate::handlers::gg::op_gg_client;
+use crate::handlers::gg::op_gg_client::Game;
 use crate::handlers::gg::op_gg_client::Region;
+use crate::handlers::gg::riot_client;
+use crate::handlers::gg::riot_client::Champion;
 use crate::handlers::persistence::Handler;
 use crate::handlers::persistence::Reply;
 
@@ -46,19 +50,28 @@ impl<'a> Gg<'a> {
                             op_gg_client::get_summoner(additional_inputs.region, &additional_inputs.summoner_name)
                                 .await
                                 .unwrap();
-                        let games =
-                            op_gg_client::get_games(additional_inputs.region, &summoner.summoner_id, None, None)
-                                .await
-                                .unwrap();
+                        if let Some(game) = op_gg_client::get_last_game(additional_inputs.region, &summoner.summoner_id)
+                            .await
+                            .unwrap()
+                        {
+                            let template_inputs: TemplateInputs = TemplateInputs {
+                                champion: riot_client::get_champion(game.my_data.champion_key).await.unwrap(),
+                                game,
+                            };
 
-                        match reply.render_template(&self.templates_env, Some(&Value::from_serializable(&games))) {
-                            Ok(rendered_reply) if rendered_reply.is_empty() => {
-                                eprintln!("Rendered reply template empty: {:?}.", reply)
+                            match reply
+                                .render_template(&self.templates_env, Some(&Value::from_serializable(&template_inputs)))
+                            {
+                                Ok(rendered_reply) if rendered_reply.is_empty() => {
+                                    eprintln!("Rendered reply template empty: {:?}.", reply)
+                                }
+                                Ok(rendered_reply) => {
+                                    self.irc_client.say_in_reply_to(message, rendered_reply).await.unwrap()
+                                }
+                                Err(e) => eprintln!("Error rendering reply template, error: {:?}, {:?}.", reply, e),
                             }
-                            Ok(rendered_reply) => {
-                                self.irc_client.say_in_reply_to(message, rendered_reply).await.unwrap()
-                            }
-                            Err(e) => eprintln!("Error rendering reply template, error: {:?}, {:?}.", reply, e),
+                        } else {
+                            eprintln!("No games returned for reply: {:?}.", reply)
                         }
                     }
                     Err(error) => eprintln!(
@@ -83,8 +96,14 @@ impl<'a> Gg<'a> {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Dummy)]
 pub struct AdditionalInputs {
     pub region: Region,
     pub summoner_name: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Dummy)]
+pub struct TemplateInputs {
+    pub champion: Option<Champion>,
+    pub game: Game,
 }

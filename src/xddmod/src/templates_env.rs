@@ -18,6 +18,7 @@ pub fn build_global_templates_env<'a>() -> Environment<'a> {
     template_env.add_filter("sub_date_times", sub_date_times);
     template_env.add_filter("format_duration", format_duration);
     template_env.add_filter("wrap_string", wrap_string);
+    template_env.add_filter("add_duration", add_duration);
 
     template_env
 }
@@ -51,16 +52,8 @@ fn sub_date_times(from_date_time: &str, to_date_time: &str) -> Result<minijinja:
     Ok(minijinja::value::Value::from_serializable(&time_span))
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
-#[serde(tag = "kind")]
-enum TimeSpan {
-    InTheFuture { duration: std::time::Duration },
-    InThePast { duration: std::time::Duration },
-    Zero { duration: std::time::Duration },
-}
-
-fn format_duration(time_span: &minijinja::value::Value) -> Result<String, minijinja::Error> {
-    let duration: std::time::Duration = from_json_value(to_json_value(time_span)?)?;
+fn format_duration(duration: &minijinja::value::Value) -> Result<String, minijinja::Error> {
+    let duration: std::time::Duration = from_json_value(to_json_value(duration)?)?;
 
     let mut formatter = timeago::Formatter::new();
     formatter.ago("");
@@ -72,6 +65,22 @@ fn format_duration(time_span: &minijinja::value::Value) -> Result<String, miniji
 
 fn wrap_string(string: &str, wrapping: &str) -> Result<String, minijinja::Error> {
     Ok(format!("{}{}{}", wrapping, string, wrapping))
+}
+
+fn add_duration(date_time: &str, duration: &minijinja::value::Value) -> Result<String, minijinja::Error> {
+    let date_time = parse_date_time_from_rfc3339(date_time)?;
+    let std_duration: std::time::Duration = from_json_value(to_json_value(duration)?)?;
+    let duration = chrono::Duration::from_std(std_duration).map_err(|e| {
+        minijinja::Error::new(
+            ErrorKind::InvalidOperation,
+            format!(
+                "Cannot convert std::time::Duration {:?} to chrono::Duration, error {:?}.",
+                duration, e
+            ),
+        )
+    })?;
+
+    Ok((date_time + duration).to_rfc3339())
 }
 
 fn parse_timezone(timezone: &str) -> Result<Tz, minijinja::Error> {
@@ -117,8 +126,17 @@ fn from_json_value<T: DeserializeOwned>(value: serde_json::Value) -> Result<T, m
     })
 }
 
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[serde(tag = "kind")]
+enum TimeSpan {
+    InTheFuture { duration: std::time::Duration },
+    InThePast { duration: std::time::Duration },
+    Zero { duration: std::time::Duration },
+}
+
 #[cfg(test)]
 mod tests {
+    use chrono::TimeZone;
     use minijinja::context;
     use serde_json::json;
 
@@ -206,6 +224,21 @@ mod tests {
 
         assert_eq!(
             "\n            'Foo' vs 'Bar' vs 'Baz'\n        ",
+            env.render_str(template, template_context).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_add_duration_works_as_expected() {
+        let template = r#"{{ date_time|add_duration(duration) }}"#;
+        let template_context = context! {
+                duration => std::time::Duration::new(42, 0),
+                date_time => Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()
+        };
+        let env = build_global_templates_env();
+
+        assert_eq!(
+            "2020-01-01T00:00:42+00:00",
             env.render_str(template, template_context).unwrap()
         );
     }
