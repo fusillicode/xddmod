@@ -386,25 +386,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dankcontent"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "fake",
- "lazy_static",
- "minijinja",
- "pomsky-macro",
- "rand",
- "regex",
- "serde",
- "serde_json",
- "sqlx",
- "tokio",
- "twitch_api2",
- "xddmod",
-]
-
-[[package]]
 name = "darling"
 version = "0.14.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1523,30 +1504,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ac9a59f73473f1b8d852421e59e64809f025994837ef743615c6d0c5b305160"
 
 [[package]]
-name = "pomsky"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6807866ef2d693e9770774e9443d64aa98e4da3de805130b9387d0d05e00f0e"
-dependencies = [
- "pomsky-syntax",
-]
-
-[[package]]
-name = "pomsky-macro"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ec61110bbb75607cd71ca75d2ccfd216658dc4f942ac92ec5a7db2984e3871b"
-dependencies = [
- "pomsky",
-]
-
-[[package]]
-name = "pomsky-syntax"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "034aa21218419dc25ae3aa753bd8080bbe1a4c14f217f4d23cd501c911f7889d"
-
-[[package]]
 name = "ppv-lite86"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1654,9 +1611,9 @@ checksum = "a5996294f19bd3aae0453a862ad728f60e6600695733dd5df01da90c54363a3c"
 
 [[package]]
 name = "reqwest"
-version = "0.11.16"
+version = "0.11.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27b71749df584b7f4cac2c426c127a7c785a5106cc98f7a8feb044115f0fa254"
+checksum = "13293b639a097af28fc8a90f22add145a9c954e49d77da06263d58cf44d5fb91"
 dependencies = [
  "base64 0.21.0",
  "bytes",
