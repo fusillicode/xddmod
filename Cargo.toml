@@ -3,7 +3,7 @@ resolver = "2"
 members = ["src/*"]
 
 [workspace.dependencies]
-anyhow = "1.0.70"
+anyhow = "1.0.71"
 fake = { git = "https://github.com/cksac/fake-rs", rev = "1c26a39", features = ["derive", "chrono", "serde_json"] }
 lazy_static = "1.4.0"
 minijinja = "0.32.1"
