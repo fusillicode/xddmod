@@ -26,7 +26,7 @@ use crate::auth::IRCClient;
 use crate::handlers::persistence::Handler;
 use crate::handlers::persistence::Reply;
 
-pub struct Gambage<'a> {
+pub struct GambaTime<'a> {
     pub token: UserToken,
     pub broadcaster_id: UserId,
     pub helix_client: HelixClient<'a, reqwest::Client>,
@@ -35,13 +35,13 @@ pub struct Gambage<'a> {
     pub templates_env: Environment<'a>,
 }
 
-impl<'a> Gambage<'a> {
+impl<'a> GambaTime<'a> {
     pub fn handler(&self) -> Handler {
         Handler::Gamba
     }
 }
 
-impl<'a> Gambage<'a> {
+impl<'a> GambaTime<'a> {
     pub async fn handle(&self, server_message: &ServerMessage) {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
             match Reply::matching(
