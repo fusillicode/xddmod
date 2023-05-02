@@ -46,7 +46,6 @@ impl<'a> GambaTime<'a> {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
             match Reply::matching(
                 self.handler(),
-                None,
                 &message.channel_login,
                 &message.message_text,
                 &self.db_pool,

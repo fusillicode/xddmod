@@ -15,7 +15,6 @@ pub struct Reply {
     pub pattern: String,
     pub case_insensitive: bool,
     pub template: String,
-    pub to_mention: bool,
     pub channel: Option<String>,
     pub enabled: bool,
     pub additional_inputs: Option<Json<serde_json::Value>>,
@@ -27,21 +26,15 @@ pub struct Reply {
 impl Reply {
     pub async fn matching<'a>(
         handler: Handler,
-        you: Option<&str>,
         channel: &str,
         message_text: &str,
         executor: impl SqliteExecutor<'a>,
     ) -> Vec<Reply> {
-        let is_mention = you.map(|y| message_text.to_lowercase().contains(y));
-
         Self::all(handler, channel, executor)
             .await
             .unwrap()
             .into_iter()
             .filter(|reply| {
-                if is_mention.map(|x| x != reply.to_mention).unwrap_or(false) {
-                    return false;
-                }
                 match RegexBuilder::new(&reply.pattern)
                     .case_insensitive(reply.case_insensitive)
                     .build()
@@ -82,7 +75,6 @@ impl Reply {
                     pattern,
                     case_insensitive,
                     template,
-                    to_mention,
                     channel,
                     enabled,
                     created_by,
