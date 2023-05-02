@@ -1,6 +1,3 @@
-use std::fmt::Display;
-
-use anyhow::bail;
 use chrono::DateTime;
 use chrono::Utc;
 use fake::Dummy;
@@ -10,20 +7,11 @@ use reqwest::Url;
 use serde::Deserialize;
 use serde::Serialize;
 
-const OP_GG_API: &str = "https://op.gg/api/v1.0/internal/bypass";
-
-pub async fn get_summoner(region: Region, summoner_name: &str) -> anyhow::Result<Summoner> {
-    match &get_summoners(region, summoner_name).await?.data[..] {
-        [summoner] => Ok(summoner.clone()),
-        [] => bail!("No summoner found with name {} in region {}", summoner_name, region),
-        summoners => bail!(
-            "Multiple summoners found with name {} in region {}, summoners: {:?}",
-            summoner_name,
-            region,
-            summoners
-        ),
-    }
-}
+use crate::apis::op_gg::summoners::Summoner;
+use crate::apis::op_gg::Region;
+use crate::apis::op_gg::TeamKey;
+use crate::apis::op_gg::TierInfo;
+use crate::apis::op_gg::OP_GG_API;
 
 pub async fn get_last_game(region: Region, summoner_id: &str) -> anyhow::Result<Option<Game>> {
     let games = get_games(region, summoner_id, None, None, Some(1)).await?;
@@ -31,7 +19,7 @@ pub async fn get_last_game(region: Region, summoner_id: &str) -> anyhow::Result<
     Ok(games.data.first().cloned())
 }
 
-pub async fn get_games(
+async fn get_games(
     region: Region,
     summoner_id: &str,
     maybe_from: Option<DateTime<Utc>>,
@@ -70,77 +58,6 @@ pub async fn get_games(
     }
 
     Ok(games)
-}
-
-async fn get_summoners(region: Region, summoner_name: &str) -> anyhow::Result<Summoners> {
-    let mut url = Url::parse(&format!("{}/summoners/{}/autocomplete", OP_GG_API, region))?;
-    url.set_query(Some(&format!("keyword={}", summoner_name)));
-
-    Ok(reqwest::get(url).await?.json().await?)
-}
-
-#[derive(Clone, Copy, Debug, Dummy, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Region {
-    Br,
-    Eune,
-    Euw,
-    Jp,
-    Kr,
-    Lan,
-    Las,
-    Na,
-    Oce,
-    Ph,
-    Ru,
-    Sg,
-    Th,
-    Tr,
-    Tw,
-    Vn,
-}
-
-impl Display for Region {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            Region::Br => "br",
-            Region::Eune => "eune",
-            Region::Euw => "euw",
-            Region::Jp => "jp",
-            Region::Kr => "kr",
-            Region::Lan => "lan",
-            Region::Las => "las",
-            Region::Na => "na",
-            Region::Oce => "oce",
-            Region::Ph => "ph",
-            Region::Ru => "ru",
-            Region::Sg => "sg",
-            Region::Th => "th",
-            Region::Tr => "tr",
-            Region::Tw => "tw",
-            Region::Vn => "vn",
-        };
-        write!(f, "{}", s)
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
-pub struct Summoners {
-    pub data: Vec<Summoner>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
-pub struct Summoner {
-    pub id: i64,
-    pub summoner_id: String,
-    pub acct_id: String,
-    pub puuid: String,
-    pub name: String,
-    pub internal_name: String,
-    pub profile_image_url: String,
-    pub level: i64,
-    pub updated_at: DateTime<Utc>,
-    pub solo_tier_info: Option<TierInfo>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
@@ -192,15 +109,6 @@ impl Dummy<Faker> for Game {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
-pub struct TierInfo {
-    pub tier: Option<String>,
-    pub division: Option<i64>,
-    pub tier_image_url: String,
-    pub border_image_url: Option<String>,
-    pub lp: Option<i64>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
 pub struct Participant {
     pub summoner: Summoner,
     pub participant_id: i64,
@@ -214,13 +122,6 @@ pub struct Participant {
     pub spells: Vec<i64>,
     pub stats: Stats,
     pub tier_info: TierInfo,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Dummy)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum TeamKey {
-    Red,
-    Blue,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Dummy)]

@@ -65,7 +65,7 @@ impl Reply {
             Some(ctx) => minijinja::value::Value::from_serializable(ctx),
             None => context!(),
         };
-        template_env.render_str(&self.template, ctx)
+        template_env.render_str(&self.template, ctx).map(|s| s.trim().into())
     }
 
     async fn all<'a>(
@@ -107,4 +107,5 @@ pub enum Handler {
     Npc,
     Gamba,
     Gg,
+    Sniffa,
 }
