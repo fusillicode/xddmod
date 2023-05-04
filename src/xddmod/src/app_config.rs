@@ -3,8 +3,8 @@ use std::net::SocketAddr;
 use config::Config;
 use config::Environment;
 use serde::Deserialize;
-use twitch_api2::twitch_oauth2::ClientId;
-use twitch_api2::twitch_oauth2::ClientSecret;
+use twitch_api::twitch_oauth2::ClientId;
+use twitch_api::twitch_oauth2::ClientSecret;
 use url::Url;
 
 #[derive(Debug, Deserialize, Clone)]

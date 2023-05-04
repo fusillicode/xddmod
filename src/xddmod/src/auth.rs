@@ -12,10 +12,10 @@ use axum::Router;
 use serde::Deserialize;
 use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::sync::Mutex;
-use twitch_api2::twitch_oauth2::tokens::UserTokenBuilder;
-use twitch_api2::twitch_oauth2::Scope;
-use twitch_api2::twitch_oauth2::TwitchToken;
-use twitch_api2::twitch_oauth2::UserToken;
+use twitch_api::twitch_oauth2::tokens::UserTokenBuilder;
+use twitch_api::twitch_oauth2::Scope;
+use twitch_api::twitch_oauth2::TwitchToken;
+use twitch_api::twitch_oauth2::UserToken;
 use twitch_irc::login::GetAccessTokenResponse;
 use twitch_irc::login::RefreshingLoginCredentials;
 use twitch_irc::login::TokenStorage;
@@ -41,7 +41,13 @@ pub async fn authenticate<'a>(app_config: AppConfig) -> (MessageReceiver, IRCCli
         app_config.client_secret.clone(),
         auth_callback_url,
     )
-    .set_scopes(vec![Scope::ChatRead, Scope::ChatEdit, Scope::ChannelReadPredictions]);
+    .set_scopes(vec![
+        Scope::ChatRead,
+        Scope::ChatEdit,
+        Scope::ChannelReadPredictions,
+        Scope::ModeratorManageBannedUsers,
+        Scope::parse("moderator:manage:chat_messages"),
+    ]);
 
     let (auth_url, _) = user_token_builder.generate_url();
 
