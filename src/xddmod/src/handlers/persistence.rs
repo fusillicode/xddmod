@@ -96,8 +96,9 @@ impl Reply {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "TEXT")]
 pub enum Handler {
-    Npc,
     Gamba,
     Gg,
+    Npc,
+    RipBozo,
     Sniffa,
 }
