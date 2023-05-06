@@ -88,6 +88,10 @@ fn should_delete(message_text: &str) -> bool {
         return false;
     }
 
+    if not_ascii.iter().all(|x| x == &'…') {
+        return false;
+    }
+
     let ascii_count = ascii.len();
     let not_ascii_perc = (not_ascii_count as f64 / (not_ascii_count + ascii_count) as f64) * 100.0;
 
@@ -103,6 +107,12 @@ mod tests {
         assert!(!should_delete(r#""#));
         assert!(!should_delete(r#" "#));
         assert!(!should_delete(r#"ciao"#));
+        assert!(!should_delete(r#"..."#));
+        assert!(!should_delete(r#"......"#));
+        assert!(!should_delete(r#"........."#));
+        assert!(!should_delete(r#"…"#));
+        assert!(!should_delete(r#"…o"#));
+        assert!(should_delete(r#"…ö"#));
         assert!(!should_delete(
             r#""El presidente del Congreso, que aún no ha manifestado si se adherirá o no a la iniciativa del ministro de Industria, no quiso dar trascendencia al asunto, «que no tiene más valor que el de una anécdota y el de una corbata regalada»."#
         ));
