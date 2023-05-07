@@ -28,15 +28,7 @@ impl<'a> RipBozo<'a> {
 impl<'a> RipBozo<'a> {
     pub async fn handle(&mut self, server_message: &ServerMessage) {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
-            if message
-                .badges
-                .iter()
-                .any(|b| b.name == "moderator" || b.name == "broadcaster")
-            {
-                return;
-            }
-
-            if should_delete(&message.message_text) {
+            if !twitch::helpers::is_from_streamer_or_mod(message) && should_delete(&message.message_text) {
                 self.delete_message_with_token_refresh(message, server_message).await;
             }
         }

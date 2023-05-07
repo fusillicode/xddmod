@@ -5,6 +5,7 @@ use twitch_api::helix::HelixRequestGetError;
 use twitch_api::helix::HelixRequestPatchError;
 use twitch_api::helix::HelixRequestPostError;
 use twitch_api::helix::HelixRequestPutError;
+use twitch_irc::message::PrivmsgMessage;
 
 pub fn is_unauthorized_error<T: std::error::Error + Send + Sync + 'static>(error: &ClientRequestError<T>) -> bool {
     matches!(
@@ -26,4 +27,11 @@ pub fn is_unauthorized_error<T: std::error::Error + Send + Sync + 'static>(error
             ..
         })
     )
+}
+
+pub fn is_from_streamer_or_mod(message: &PrivmsgMessage) -> bool {
+    message
+        .badges
+        .iter()
+        .any(|b| b.name == "moderator" || b.name == "broadcaster")
 }
