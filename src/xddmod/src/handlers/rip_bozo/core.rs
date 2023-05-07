@@ -76,7 +76,7 @@ fn should_delete(message_text: &str) -> bool {
     let no_whitespaces = graphemes.into_iter().filter(|x| !x.trim().is_empty());
 
     if no_whitespaces.clone().all(|s| EMOJI_REGEX.is_match(s)) {
-        return no_whitespaces.clone().count() > 24;
+        return no_whitespaces.count() > 24;
     }
 
     let (ascii, not_ascii): (Vec<&str>, Vec<&str>) = no_whitespaces.partition(|x| x.is_ascii());
