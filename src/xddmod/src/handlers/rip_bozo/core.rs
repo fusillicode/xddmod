@@ -72,30 +72,32 @@ impl<'a> RipBozo<'a> {
 }
 
 lazy_static! {
-    static ref ANY_EMOJI_REGEX: Regex = Regex::new(r#"\p{Emoji}"#).unwrap();
+    static ref EMOJI_REGEX: Regex = Regex::new(r#"\p{Emoji}"#).unwrap();
 }
 
 fn should_delete(message_text: &str) -> bool {
-    if ANY_EMOJI_REGEX.is_match(message_text) {
-        return false;
+    let message_text = message_text.replace('…', "...");
+
+    let graphemes: Vec<&str> =
+        unicode_segmentation::UnicodeSegmentation::graphemes(message_text.as_str(), true).collect();
+
+    let no_whitespaces = graphemes.into_iter().filter(|x| !x.trim().is_empty());
+
+    if no_whitespaces.clone().all(|s| EMOJI_REGEX.is_match(s)) {
+        return no_whitespaces.clone().count() > 24;
     }
 
-    let no_whitespaces = message_text.chars().filter(|c| !c.is_whitespace());
-    let (ascii, not_ascii): (Vec<char>, Vec<char>) = no_whitespaces.clone().partition(char::is_ascii);
+    let (ascii, not_ascii): (Vec<&str>, Vec<&str>) = no_whitespaces.partition(|x| x.is_ascii());
 
     let not_ascii_count = not_ascii.len();
     if not_ascii_count == 0 {
         return false;
     }
 
-    if not_ascii.iter().all(|x| x == &'…') {
-        return false;
-    }
-
     let ascii_count = ascii.len();
     let not_ascii_perc = (not_ascii_count as f64 / (not_ascii_count + ascii_count) as f64) * 100.0;
 
-    not_ascii_perc >= 45.0
+    not_ascii_perc > 45.0
 }
 
 #[cfg(test)]
@@ -112,11 +114,21 @@ mod tests {
         assert!(!should_delete(r#"........."#));
         assert!(!should_delete(r#"…"#));
         assert!(!should_delete(r#"…o"#));
-        assert!(should_delete(r#"…ö"#));
+        assert!(!should_delete(r#"…ö"#));
         assert!(!should_delete(
             r#""El presidente del Congreso, que aún no ha manifestado si se adherirá o no a la iniciativa del ministro de Industria, no quiso dar trascendencia al asunto, «que no tiene más valor que el de una anécdota y el de una corbata regalada»."#
         ));
+        assert!(!should_delete(r#"🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲"#));
         assert!(!should_delete(
+            r#"🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲"#
+        ));
+        assert!(should_delete(
+            r#"🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲"#
+        ));
+        assert!(should_delete(
+            r#"🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲"#
+        ));
+        assert!(should_delete(
             r#"
                 ✅✅✅✅✅✅✅✅✅✅✅✅
                 ✅✅✅✅✅✅✅✅✅✅✅✅
@@ -128,17 +140,6 @@ mod tests {
                 ✅✅✅⬛⬛✅✅⬛⬛✅✅✅
                 ✅✅✅✅✅✅✅✅✅✅✅✅
             "#
-        ));
-        assert!(!should_delete(r#"🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲"#));
-        assert!(!should_delete(
-            r#"🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲"#
-        ));
-
-        assert!(!should_delete(
-            r#"🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲"#
-        ));
-        assert!(!should_delete(
-            r#"🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲"#
         ));
         assert!(!should_delete(
             r#"
