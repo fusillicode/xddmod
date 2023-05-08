@@ -8,6 +8,7 @@ use twitch_api::HelixClient;
 use twitch_irc::message::PrivmsgMessage;
 use twitch_irc::message::ServerMessage;
 use twitch_types::UserId;
+use unicode_segmentation::UnicodeSegmentation;
 
 use crate::apis::twitch;
 use crate::handlers::persistence::Handler;
@@ -68,28 +69,39 @@ lazy_static! {
 }
 
 fn should_delete(message_text: &str) -> bool {
-    let message_text = message_text.replace('…', "...");
+    let graphemes: Vec<&str> = UnicodeSegmentation::graphemes(message_text, true).collect();
 
-    let graphemes: Vec<&str> =
-        unicode_segmentation::UnicodeSegmentation::graphemes(message_text.as_str(), true).collect();
+    let (_whitespaces_count, ascii, emojis, no_ascii): (usize, Vec<&str>, Vec<&str>, Vec<&str>) =
+        graphemes.into_iter().fold(
+            (0, vec![], vec![], vec![]),
+            |(mut whitespaces_count, mut ascii, mut emojis, mut no_ascii), g| {
+                match g.is_ascii() {
+                    true if g.trim().is_empty() => whitespaces_count += 1,
+                    true => ascii.push(g),
+                    false if g == "…" => ascii.push(g),
+                    false if EMOJI_REGEX.is_match(g) => emojis.push(g),
+                    false => no_ascii.push(g),
+                }
 
-    let no_whitespaces = graphemes.into_iter().filter(|x| !x.trim().is_empty());
+                (whitespaces_count, ascii, emojis, no_ascii)
+            },
+        );
 
-    if no_whitespaces.clone().all(|s| EMOJI_REGEX.is_match(s)) {
-        return no_whitespaces.count() > 24;
+    let ascii_count = ascii.len();
+    let emojis_count = emojis.len();
+    let no_ascii_count = no_ascii.len();
+    let no_whitespaces_count = emojis_count + no_ascii_count + ascii_count;
+
+    if emojis_count == no_whitespaces_count {
+        return no_whitespaces_count > 24;
     }
 
-    let (ascii, not_ascii): (Vec<&str>, Vec<&str>) = no_whitespaces.partition(|x| x.is_ascii());
-
-    let not_ascii_count = not_ascii.len();
-    if not_ascii_count == 0 {
+    if no_ascii_count == 0 {
         return false;
     }
 
-    let ascii_count = ascii.len();
-    let not_ascii_perc = (not_ascii_count as f64 / (not_ascii_count + ascii_count) as f64) * 100.0;
-
-    not_ascii_perc > 45.0
+    let no_ascii_perc = (no_ascii_count as f64 / (no_ascii_count + ascii_count) as f64) * 100.0;
+    no_ascii_perc > 45.0
 }
 
 #[cfg(test)]
@@ -106,7 +118,6 @@ mod tests {
         assert!(!should_delete(r#"........."#));
         assert!(!should_delete(r#"…"#));
         assert!(!should_delete(r#"…o"#));
-        assert!(!should_delete(r#"…ö"#));
         assert!(!should_delete(
             r#""El presidente del Congreso, que aún no ha manifestado si se adherirá o no a la iniciativa del ministro de Industria, no quiso dar trascendencia al asunto, «que no tiene más valor que el de una anécdota y el de una corbata regalada»."#
         ));
@@ -114,6 +125,7 @@ mod tests {
         assert!(!should_delete(
             r#"🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲"#
         ));
+        assert!(should_delete(r#"…ö"#));
         assert!(should_delete(
             r#"🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲"#
         ));
