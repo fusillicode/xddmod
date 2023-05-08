@@ -71,37 +71,37 @@ lazy_static! {
 fn should_delete(message_text: &str) -> bool {
     let graphemes: Vec<&str> = UnicodeSegmentation::graphemes(message_text, true).collect();
 
-    let (_whitespaces_count, ascii, emojis, no_ascii): (usize, Vec<&str>, Vec<&str>, Vec<&str>) =
+    let (_whitespaces_count, ascii, emojis, not_ascii): (usize, Vec<&str>, Vec<&str>, Vec<&str>) =
         graphemes.into_iter().fold(
             (0, vec![], vec![], vec![]),
-            |(mut whitespaces_count, mut ascii, mut emojis, mut no_ascii), g| {
+            |(mut whitespaces_count, mut ascii, mut emojis, mut not_ascii), g| {
                 match g.is_ascii() {
                     true if g.trim().is_empty() => whitespaces_count += 1,
                     true => ascii.push(g),
                     false if g == "…" => ascii.push(g),
                     false if EMOJI_REGEX.is_match(g) => emojis.push(g),
-                    false => no_ascii.push(g),
+                    false => not_ascii.push(g),
                 }
 
-                (whitespaces_count, ascii, emojis, no_ascii)
+                (whitespaces_count, ascii, emojis, not_ascii)
             },
         );
 
     let ascii_count = ascii.len();
     let emojis_count = emojis.len();
-    let no_ascii_count = no_ascii.len();
-    let no_whitespaces_count = emojis_count + no_ascii_count + ascii_count;
+    let not_ascii_count = not_ascii.len();
+    let no_whitespaces_count = emojis_count + not_ascii_count + ascii_count;
 
     if emojis_count == no_whitespaces_count {
         return no_whitespaces_count > 24;
     }
 
-    if no_ascii_count == 0 {
+    if not_ascii_count == 0 {
         return false;
     }
 
-    let no_ascii_perc = (no_ascii_count as f64 / (no_ascii_count + ascii_count) as f64) * 100.0;
-    no_ascii_perc > 45.0
+    let not_ascii_perc = (not_ascii_count as f64 / (not_ascii_count + ascii_count) as f64) * 100.0;
+    not_ascii_perc > 45.0
 }
 
 #[cfg(test)]
@@ -125,6 +125,7 @@ mod tests {
         assert!(!should_delete(
             r#"🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲"#
         ));
+        assert!(!should_delete(r#"WHAT?!!! 🔥🔥🔥🗣️💯💯💯"#));
         assert!(should_delete(r#"…ö"#));
         assert!(should_delete(
             r#"🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲"#
@@ -238,5 +239,8 @@ mod tests {
                         |   |
             "#
         ));
+        // assert!(should_delete(
+        //     r#"_________________________________ This chat is now in cute mode AYAYA _________________________________"#
+        // ));
     }
 }
