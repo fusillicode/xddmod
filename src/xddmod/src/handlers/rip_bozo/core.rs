@@ -75,10 +75,13 @@ fn should_delete(message_text: &str) -> bool {
         graphemes.into_iter().fold(
             (0, vec![], vec![], vec![]),
             |(mut whitespaces_count, mut ascii, mut emojis, mut not_ascii), g| {
+                if g == "\u{e0000}" || g == "…" {
+                    return (whitespaces_count, ascii, emojis, not_ascii);
+                }
+
                 match g.is_ascii() {
                     true if g.trim().is_empty() => whitespaces_count += 1,
                     true => ascii.push(g),
-                    false if g == "…" => ascii.push(g),
                     false if EMOJI_REGEX.is_match(g) => emojis.push(g),
                     false => not_ascii.push(g),
                 }
@@ -126,6 +129,8 @@ mod tests {
             r#"🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲"#
         ));
         assert!(!should_delete(r#"WHAT?!!! 🔥🔥🔥🗣️💯💯💯"#));
+        assert!(!should_delete("🐝 \u{e0000}"));
+        assert!(!should_delete("A \u{e0000}"));
         assert!(should_delete(r#"…ö"#));
         assert!(should_delete(
             r#"🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲"#
@@ -240,7 +245,7 @@ mod tests {
             "#
         ));
         // assert!(should_delete(
-        //     r#"_________________________________ This chat is now in cute mode AYAYA _________________________________"#
-        // ));
+        //     r#"_________________________________ This chat is now in cute mode AYAYA
+        // _________________________________"# ));
     }
 }
