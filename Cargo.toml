@@ -5,7 +5,7 @@ members = ["src/*"]
 [workspace.dependencies]
 anyhow = "1.0.71"
 chrono = "0.4.24"
-fake = { git = "https://github.com/cksac/fake-rs", rev = "1c26a39", features = ["derive", "chrono", "serde_json"] }
+fake = { version = "2.6.0", features = ["derive", "chrono", "serde_json"] }
 lazy_static = "1.4.0"
 minijinja = "0.32.1"
 rand = "0.8"
