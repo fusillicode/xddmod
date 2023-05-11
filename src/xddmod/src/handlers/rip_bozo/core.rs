@@ -68,7 +68,7 @@ lazy_static! {
     static ref EMOJI_REGEX: Regex = Regex::new(r#"\p{Emoji}"#).unwrap();
 }
 
-const NOT_ASCII_WHITELIST: [&str; 2] = ["\u{e0000}", "…"];
+const NOT_ASCII_WHITELIST: [&str; 3] = ["\u{e0000}", "…", "？"];
 
 fn should_delete(message_text: &str) -> bool {
     let graphemes: Vec<&str> = UnicodeSegmentation::graphemes(message_text, true).collect();
@@ -130,6 +130,8 @@ mod tests {
         assert!(!should_delete(r#"WHAT?!!! 🔥🔥🔥🗣️💯💯💯"#));
         assert!(!should_delete("🐝 \u{e0000}"));
         assert!(!should_delete("A \u{e0000}"));
+        assert!(!should_delete("？"));
+        assert!(!should_delete("foo ？"));
         assert!(should_delete(r#"…ö"#));
         assert!(should_delete(
             r#"🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲"#
@@ -244,7 +246,7 @@ mod tests {
             "#
         ));
         // assert!(should_delete(
-        //     r#"_________________________________ This chat is now in cute mode AYAYA _________________________________"#
-        // ));
+        //     r#"_________________________________ This chat is now in cute mode AYAYA
+        // _________________________________"# ));
     }
 }
