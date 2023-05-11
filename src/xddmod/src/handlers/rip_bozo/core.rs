@@ -68,6 +68,8 @@ lazy_static! {
     static ref EMOJI_REGEX: Regex = Regex::new(r#"\p{Emoji}"#).unwrap();
 }
 
+const NOT_ASCII_WHITELIST: [&str; 2] = ["\u{e0000}", "…"];
+
 fn should_delete(message_text: &str) -> bool {
     let graphemes: Vec<&str> = UnicodeSegmentation::graphemes(message_text, true).collect();
 
@@ -75,14 +77,11 @@ fn should_delete(message_text: &str) -> bool {
         graphemes.into_iter().fold(
             (0, vec![], vec![], vec![]),
             |(mut whitespaces_count, mut ascii, mut emojis, mut not_ascii), g| {
-                if g == "\u{e0000}" || g == "…" {
-                    return (whitespaces_count, ascii, emojis, not_ascii);
-                }
-
                 match g.is_ascii() {
-                    true if g.trim().is_empty() => whitespaces_count += 1,
+                    true | false if g.trim().is_empty() => whitespaces_count += 1,
                     true => ascii.push(g),
                     false if EMOJI_REGEX.is_match(g) => emojis.push(g),
+                    false if NOT_ASCII_WHITELIST.contains(&g) => (),
                     false => not_ascii.push(g),
                 }
 
@@ -245,7 +244,7 @@ mod tests {
             "#
         ));
         // assert!(should_delete(
-        //     r#"_________________________________ This chat is now in cute mode AYAYA
-        // _________________________________"# ));
+        //     r#"_________________________________ This chat is now in cute mode AYAYA _________________________________"#
+        // ));
     }
 }
