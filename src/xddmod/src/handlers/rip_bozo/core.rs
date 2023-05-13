@@ -68,42 +68,83 @@ lazy_static! {
     static ref EMOJI_REGEX: Regex = Regex::new(r#"\p{Emoji}"#).unwrap();
 }
 
+struct TextStats<'a> {
+    graphemes: Vec<&'a str>,
+    ascii_alnum: Vec<char>,
+    ascii_symbols: Vec<char>,
+    not_ascii: Vec<&'a str>,
+    emojis: Vec<&'a str>,
+    whitespaces: Vec<&'a str>,
+}
+
+impl<'a> TextStats<'a> {
+    pub fn build(text: &'a str) -> Self {
+        let graphemes: Vec<&str> = UnicodeSegmentation::graphemes(text, true).collect();
+
+        let mut ascii_alnum = vec![];
+        let mut ascii_symbols = vec![];
+        let mut not_ascii = vec![];
+        let mut emojis = vec![];
+        let mut whitespaces = vec![];
+
+        for g in graphemes.iter() {
+            match g.is_ascii() {
+                _ if g.trim().is_empty() => whitespaces.push(*g),
+                true => {
+                    for c in g.chars() {
+                        if c.is_alphanumeric() {
+                            ascii_alnum.push(c)
+                        } else {
+                            ascii_symbols.push(c)
+                        }
+                    }
+                }
+                false if EMOJI_REGEX.is_match(g) => emojis.push(*g),
+                false => not_ascii.push(*g),
+            }
+        }
+
+        Self {
+            graphemes,
+            ascii_alnum,
+            ascii_symbols,
+            not_ascii,
+            emojis,
+            whitespaces,
+        }
+    }
+
+    pub fn only_emojis(&self) -> Option<usize> {
+        let emojis_count = self.emojis.len();
+        if emojis_count == self.ascii_alnum.len() + self.ascii_symbols.len() + self.not_ascii.len() + self.emojis.len()
+        {
+            return Some(emojis_count);
+        }
+        None
+    }
+
+    pub fn not_ascii_perc(&self, not_ascii_whitelist: &[&str]) -> f64 {
+        let not_ascii_count = self
+            .not_ascii
+            .iter()
+            .filter(|x| !not_ascii_whitelist.contains(x))
+            .count();
+
+        (not_ascii_count as f64 / (not_ascii_count + self.ascii_alnum.len() + self.ascii_symbols.len()) as f64) * 100.0
+    }
+}
+
 const NOT_ASCII_WHITELIST: [&str; 4] = ["\u{e0000}", "…", "？", "о"];
+const ASCII_WHITELIST: [char; 2] = ['?', '!'];
 
 fn should_delete(message_text: &str) -> bool {
-    let graphemes: Vec<&str> = UnicodeSegmentation::graphemes(message_text, true).collect();
+    let text_stats = TextStats::build(message_text);
 
-    let (_whitespaces_count, ascii, emojis, not_ascii): (usize, Vec<&str>, Vec<&str>, Vec<&str>) =
-        graphemes.into_iter().fold(
-            (0, vec![], vec![], vec![]),
-            |(mut whitespaces_count, mut ascii, mut emojis, mut not_ascii), g| {
-                match g.is_ascii() {
-                    true | false if g.trim().is_empty() => whitespaces_count += 1,
-                    true => ascii.push(g),
-                    false if EMOJI_REGEX.is_match(g) => emojis.push(g),
-                    false if NOT_ASCII_WHITELIST.contains(&g) => (),
-                    false => not_ascii.push(g),
-                }
-
-                (whitespaces_count, ascii, emojis, not_ascii)
-            },
-        );
-
-    let ascii_count = ascii.len();
-    let emojis_count = emojis.len();
-    let not_ascii_count = not_ascii.len();
-    let no_whitespaces_count = emojis_count + not_ascii_count + ascii_count;
-
-    if emojis_count == no_whitespaces_count {
-        return no_whitespaces_count > 24;
+    if let Some(emojis_count) = text_stats.only_emojis() {
+        return emojis_count > 24;
     }
 
-    if not_ascii_count == 0 {
-        return false;
-    }
-
-    let not_ascii_perc = (not_ascii_count as f64 / (not_ascii_count + ascii_count) as f64) * 100.0;
-    not_ascii_perc > 45.0
+    text_stats.not_ascii_perc(&NOT_ASCII_WHITELIST) > 45.0
 }
 
 #[cfg(test)]
