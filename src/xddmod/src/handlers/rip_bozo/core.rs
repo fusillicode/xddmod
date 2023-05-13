@@ -123,19 +123,25 @@ impl<'a> TextStats<'a> {
         None
     }
 
-    pub fn not_ascii_perc(&self, not_ascii_whitelist: &[&str]) -> f64 {
+    pub fn not_alnum_perc(&self, not_ascii_whitelist: &[&str], ascii_symbols_whitelist: &[char]) -> f64 {
         let not_ascii_count = self
             .not_ascii
             .iter()
             .filter(|x| !not_ascii_whitelist.contains(x))
             .count();
+        let ascii_symbols_count = self
+            .ascii_symbols
+            .iter()
+            .filter(|x| !ascii_symbols_whitelist.contains(x))
+            .count();
+        let not_alunm_count = not_ascii_count + ascii_symbols_count;
 
-        (not_ascii_count as f64 / (not_ascii_count + self.ascii_alnum.len() + self.ascii_symbols.len()) as f64) * 100.0
+        (not_alunm_count as f64 / (not_alunm_count + self.ascii_alnum.len()) as f64) * 100.0
     }
 }
 
 const NOT_ASCII_WHITELIST: [&str; 4] = ["\u{e0000}", "…", "？", "о"];
-const ASCII_WHITELIST: [char; 2] = ['?', '!'];
+const ASCII_WHITELIST: [char; 3] = ['?', '!', '.'];
 
 fn should_delete(message_text: &str) -> bool {
     let text_stats = TextStats::build(message_text);
@@ -144,7 +150,7 @@ fn should_delete(message_text: &str) -> bool {
         return emojis_count > 24;
     }
 
-    text_stats.not_ascii_perc(&NOT_ASCII_WHITELIST) > 45.0
+    text_stats.not_alnum_perc(&NOT_ASCII_WHITELIST, &ASCII_WHITELIST) > 45.0
 }
 
 #[cfg(test)]
@@ -288,8 +294,8 @@ mod tests {
                         |   |
             "#
         ));
-        // assert!(should_delete(
-        //     r#"_________________________________ This chat is now in cute mode AYAYA
-        // _________________________________"# ));
+        assert!(should_delete(
+            r#"_________________________________ This chat is now in cute mode AYAYA _________________________________"#
+        ));
     }
 }
