@@ -69,8 +69,8 @@ lazy_static! {
 }
 
 struct TextStats<'a> {
-    _graphemes: Vec<&'a str>,
-    ascii_alnums: Vec<char>,
+    graphemes: Vec<&'a str>,
+    ascii_alnum: Vec<char>,
     ascii_symbols: Vec<char>,
     not_ascii: Vec<&'a str>,
     emojis: Vec<&'a str>,
@@ -81,7 +81,7 @@ impl<'a> TextStats<'a> {
     pub fn build(text: &'a str) -> Self {
         let graphemes: Vec<&str> = UnicodeSegmentation::graphemes(text, true).collect();
 
-        let mut ascii_alnums = vec![];
+        let mut ascii_alnum = vec![];
         let mut ascii_symbols = vec![];
         let mut not_ascii = vec![];
         let mut emojis = vec![];
@@ -93,7 +93,7 @@ impl<'a> TextStats<'a> {
                 true => {
                     for c in g.chars() {
                         if c.is_alphanumeric() {
-                            ascii_alnums.push(c)
+                            ascii_alnum.push(c)
                         } else {
                             ascii_symbols.push(c)
                         }
@@ -105,8 +105,8 @@ impl<'a> TextStats<'a> {
         }
 
         Self {
-            _graphemes: graphemes,
-            ascii_alnums,
+            graphemes,
+            ascii_alnum,
             ascii_symbols,
             not_ascii,
             emojis,
@@ -116,40 +116,41 @@ impl<'a> TextStats<'a> {
 
     pub fn only_emojis(&self) -> Option<usize> {
         let emojis_count = self.emojis.len();
-        if emojis_count == self.ascii_alnums.len() + self.ascii_symbols.len() + self.not_ascii.len() + self.emojis.len()
+        if emojis_count == self.ascii_alnum.len() + self.ascii_symbols.len() + self.not_ascii.len() + self.emojis.len()
         {
             return Some(emojis_count);
         }
         None
     }
 
-    pub fn not_alnum_perc(&self) -> f64 {
-        let not_alunm_count = self.not_ascii.len() + self.ascii_symbols.len();
+    pub fn not_alnum_perc(&self, not_ascii_whitelist: &[&str], ascii_symbols_whitelist: &[char]) -> f64 {
+        let not_ascii_count = self
+            .not_ascii
+            .iter()
+            .filter(|x| !not_ascii_whitelist.contains(x))
+            .count();
+        let ascii_symbols_count = self
+            .ascii_symbols
+            .iter()
+            .filter(|x| !ascii_symbols_whitelist.contains(x))
+            .count();
+        let not_alunm_count = not_ascii_count + ascii_symbols_count;
 
-        (not_alunm_count as f64 / (not_alunm_count + self.ascii_alnums.len()) as f64) * 100.0
-    }
-
-    pub fn total_count(&self) -> usize {
-        self.ascii_alnums.len()
-            + self.ascii_symbols.len()
-            + self.not_ascii.len()
-            + self.emojis.len()
-            + self.whitespaces.len()
+        (not_alunm_count as f64 / (not_alunm_count + self.ascii_alnum.len()) as f64) * 100.0
     }
 }
 
+const NOT_ASCII_WHITELIST: [&str; 4] = ["\u{e0000}", "…", "？", "о"];
+const ASCII_WHITELIST: [char; 3] = ['?', '!', '.'];
+
 fn should_delete(message_text: &str) -> bool {
     let text_stats = TextStats::build(message_text);
-
-    if text_stats.total_count() < 24 {
-        return false;
-    }
 
     if let Some(emojis_count) = text_stats.only_emojis() {
         return emojis_count > 24;
     }
 
-    text_stats.not_alnum_perc() > 45.0
+    text_stats.not_alnum_perc(&NOT_ASCII_WHITELIST, &ASCII_WHITELIST) > 45.0
 }
 
 #[cfg(test)]
@@ -186,8 +187,7 @@ mod tests {
         assert!(!should_delete("foo ？"));
         assert!(!should_delete("о"));
         assert!(!should_delete("о7"));
-        assert!(!should_delete(r#"…ö"#));
-        assert!(!should_delete(r#"@@"#));
+        assert!(should_delete(r#"…ö"#));
         assert!(should_delete(
             r#"🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲"#
         ));
@@ -291,6 +291,7 @@ mod tests {
             r#"_________________________________ This chat is now in cute mode AYAYA _________________________________"#
         ));
         assert!(should_delete(r#"> < > < ><> <> <> <> <> <> <> <> <>"#));
+        assert!(should_delete(r#"@@"#));
         assert!(should_delete(
             r#"................................. This chat is now in cute mode AYAYA ................................."#
         ));
