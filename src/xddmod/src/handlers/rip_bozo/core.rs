@@ -161,10 +161,16 @@ mod tests {
     fn test_should_delete() {
         assert!(!should_delete(r#""#));
         assert!(!should_delete(r#" "#));
-        assert!(!should_delete(r#"ciao"#));
+        assert!(!should_delete(r#"hola"#));
         assert!(!should_delete(r#"..."#));
         assert!(!should_delete(r#"......"#));
         assert!(!should_delete(r#"........."#));
+        assert!(!should_delete(r#"!!!"#));
+        assert!(!should_delete(r#"!!!!!!"#));
+        assert!(!should_delete(r#"!!!!!!!!!"#));
+        assert!(!should_delete(r#"???"#));
+        assert!(!should_delete(r#"??????"#));
+        assert!(!should_delete(r#"?????????"#));
         assert!(!should_delete(r#"…"#));
         assert!(!should_delete(r#"…o"#));
         assert!(!should_delete(
@@ -273,21 +279,8 @@ mod tests {
         assert!(should_delete(
             r#"
                 |￣￣￣￣￣￣￣￣￣￣￣|
-                        insert
-                        text
-                        here
-                |＿＿＿＿＿＿＿＿＿＿＿|
-                    \ (•◡•) /
-                        \      /
-                        ---
-                        |   |
-            "#
-        ));
-        assert!(should_delete(
-            r#"
-                |￣￣￣￣￣￣￣￣￣￣￣|
                         hola
-                |＿＿＿＿＿＿＿＿＿＿＿|
+                |__________________|
                     \ (•◡•) /
                         \      /
                         ---
@@ -296,6 +289,17 @@ mod tests {
         ));
         assert!(should_delete(
             r#"_________________________________ This chat is now in cute mode AYAYA _________________________________"#
+        ));
+        assert!(should_delete(r#"> < > < ><> <> <> <> <> <> <> <> <>"#));
+        assert!(should_delete(r#"@@"#));
+        assert!(should_delete(
+            r#"................................. This chat is now in cute mode AYAYA ................................."#
+        ));
+        assert!(should_delete(
+            r#"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! This chat is now in cute mode AYAYA !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"#
+        ));
+        assert!(should_delete(
+            r#"????????????????????????????????? This chat is now in cute mode AYAYA ?????????????????????????????????"#
         ));
     }
 }
