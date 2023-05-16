@@ -123,25 +123,30 @@ impl<'a> TextStats<'a> {
         None
     }
 
-    pub fn not_alnum_perc(&self, not_ascii_whitelist: &[&str], ascii_symbols_whitelist: &[char]) -> f64 {
+    pub fn not_ascii_perc(&self, not_ascii_whitelist: &[&str]) -> f64 {
         let not_ascii_count = self
             .not_ascii
             .iter()
             .filter(|x| !not_ascii_whitelist.contains(x))
             .count();
-        let ascii_symbols_count = self
+
+        (not_ascii_count as f64 / (not_ascii_count + self.ascii_alnum.len() + self.ascii_symbols.len()) as f64) * 100.0
+    }
+
+    pub fn ascii_symbols_perc(&self, ascii_symbols_whitelist: &[char]) -> f64 {
+        let (whitelisted, ascii_symbols): (Vec<char>, Vec<char>) = self
             .ascii_symbols
             .iter()
-            .filter(|x| !ascii_symbols_whitelist.contains(x))
-            .count();
-        let not_alunm_count = not_ascii_count + ascii_symbols_count;
+            .partition(|x| ascii_symbols_whitelist.contains(x));
 
-        (not_alunm_count as f64 / (not_alunm_count + self.ascii_alnum.len()) as f64) * 100.0
+        (ascii_symbols.len() as f64
+            / (whitelisted.len() + ascii_symbols.len() + self.ascii_alnum.len() + self.emojis.len()) as f64)
+            * 100.0
     }
 }
 
 const NOT_ASCII_WHITELIST: [&str; 4] = ["\u{e0000}", "…", "？", "о"];
-const ASCII_WHITELIST: [char; 3] = ['?', '!', '.'];
+const ASCII_SYMBOLS_WHITELIST: [char; 7] = ['?', '!', '.', ')', '(', '"', '\''];
 
 fn should_delete(message_text: &str) -> bool {
     let text_stats = TextStats::build(message_text);
@@ -150,7 +155,19 @@ fn should_delete(message_text: &str) -> bool {
         return emojis_count > 24;
     }
 
-    text_stats.not_alnum_perc(&NOT_ASCII_WHITELIST, &ASCII_WHITELIST) > 45.0
+    if text_stats.not_ascii_perc(&NOT_ASCII_WHITELIST) > 45.0 {
+        return true;
+    }
+
+    // let ascii_symbols_whitelist = (message_text.len() > 33)
+    //     .then(Vec::new)
+    //     .unwrap_or_else(|| ASCII_SYMBOLS_WHITELIST.to_vec());
+
+    // if text_stats.ascii_symbols_perc(&ascii_symbols_whitelist) > 50.0 {
+    //     return true;
+    // }
+
+    false
 }
 
 #[cfg(test)]
@@ -161,6 +178,10 @@ mod tests {
     fn test_should_delete() {
         assert!(!should_delete(r#""#));
         assert!(!should_delete(r#" "#));
+        assert!(!should_delete(r#"D:"#));
+        assert!(!should_delete(r#":D"#));
+        assert!(!should_delete(r#":)"#));
+        assert!(!should_delete(r#":) :) :) :) :) :) :) :) :)"#));
         assert!(!should_delete(r#"hola"#));
         assert!(!should_delete(r#"..."#));
         assert!(!should_delete(r#"......"#));
@@ -171,6 +192,8 @@ mod tests {
         assert!(!should_delete(r#"???"#));
         assert!(!should_delete(r#"??????"#));
         assert!(!should_delete(r#"?????????"#));
+        assert!(!should_delete(r#"WTF!?!?!?!??!?!?!???!?!?!?"#));
+        assert!(!should_delete(r#"@@"#));
         assert!(!should_delete(r#"…"#));
         assert!(!should_delete(r#"…o"#));
         assert!(!should_delete(
@@ -207,7 +230,7 @@ mod tests {
                 ✅✅✅✅✅✅✅✅✅✅✅✅
             "#
         ));
-        assert!(!should_delete(
+        assert!(should_delete(
             r#"
                 YOU’VE BEEN FREAKING HIT BY THE
 
@@ -288,10 +311,26 @@ mod tests {
             "#
         ));
         assert!(should_delete(
+            r#"
+                |￣￣￣￣￣￣￣￣￣￣￣|
+                        RANDOM
+                        RANDOM
+                        RANDOM
+                        RANDOM
+                        RANDOM
+                        RANDOM
+                        RANDOM
+                |__________________|
+                    \ (•◡•) /
+                        \      /
+                        ---
+                        |   |
+            "#
+        ));
+        assert!(should_delete(
             r#"_________________________________ This chat is now in cute mode AYAYA _________________________________"#
         ));
         assert!(should_delete(r#"> < > < ><> <> <> <> <> <> <> <> <>"#));
-        assert!(should_delete(r#"@@"#));
         assert!(should_delete(
             r#"................................. This chat is now in cute mode AYAYA ................................."#
         ));
@@ -300,6 +339,15 @@ mod tests {
         ));
         assert!(should_delete(
             r#"????????????????????????????????? This chat is now in cute mode AYAYA ?????????????????????????????????"#
+        ));
+        assert!(should_delete(
+            r#"foo????????????????????????????????? This chat is now in cute mode AYAYA ?????????????????????????????????foo"#
+        ));
+        assert!(should_delete(
+            r#"foo ????????????????????????????????? This chat is now in cute mode AYAYA ????????????????????????????????? foo"#
+        ));
+        assert!(should_delete(
+            r#"foo ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? This chat is now in cute mode AYAYA ????????????????????????????????? foo"#
         ));
     }
 }
