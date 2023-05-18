@@ -68,6 +68,7 @@ lazy_static! {
     static ref EMOJI_REGEX: Regex = Regex::new(r#"\p{Emoji}"#).unwrap();
 }
 
+#[allow(dead_code)]
 struct TextStats<'a> {
     graphemes: Vec<&'a str>,
     ascii_alnum: Vec<char>,
@@ -132,21 +133,9 @@ impl<'a> TextStats<'a> {
 
         (not_ascii_count as f64 / (not_ascii_count + self.ascii_alnum.len() + self.ascii_symbols.len()) as f64) * 100.0
     }
-
-    pub fn ascii_symbols_perc(&self, ascii_symbols_whitelist: &[char]) -> f64 {
-        let (whitelisted, ascii_symbols): (Vec<char>, Vec<char>) = self
-            .ascii_symbols
-            .iter()
-            .partition(|x| ascii_symbols_whitelist.contains(x));
-
-        (ascii_symbols.len() as f64
-            / (whitelisted.len() + ascii_symbols.len() + self.ascii_alnum.len() + self.emojis.len()) as f64)
-            * 100.0
-    }
 }
 
 const NOT_ASCII_WHITELIST: [&str; 4] = ["\u{e0000}", "…", "？", "о"];
-const ASCII_SYMBOLS_WHITELIST: [char; 7] = ['?', '!', '.', ')', '(', '"', '\''];
 
 fn should_delete(message_text: &str) -> bool {
     let text_stats = TextStats::build(message_text);
@@ -158,14 +147,6 @@ fn should_delete(message_text: &str) -> bool {
     if text_stats.not_ascii_perc(&NOT_ASCII_WHITELIST) > 45.0 {
         return true;
     }
-
-    // let ascii_symbols_whitelist = (message_text.len() > 33)
-    //     .then(Vec::new)
-    //     .unwrap_or_else(|| ASCII_SYMBOLS_WHITELIST.to_vec());
-
-    // if text_stats.ascii_symbols_perc(&ascii_symbols_whitelist) > 50.0 {
-    //     return true;
-    // }
 
     false
 }
@@ -232,18 +213,6 @@ mod tests {
         ));
         assert!(should_delete(
             r#"
-                YOU’VE BEEN FREAKING HIT BY THE
-
-                |^^^^^^^^^^^^](ﾉ◕ヮ◕)ﾉ*:･ﾟ✧
-                | KAWAII TRUCK | ‘|”“”;.., ___.
-                |_…_…______===|= _|__|…, ] |
-                ”(@ )’(@ )”“”“*|(@ )(@ )*****(@　　　　⊂（ﾟДﾟ⊂⌒） NO KAWAII TRUCK NO!!!
-
-                RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM RANDOM.
-            "#
-        ));
-        assert!(should_delete(
-            r#"
                 ⢿⣿⣿⣿⣭⠹⠛⠛⠛⢿⣿⣿⣿⣿⡿⣿⠷⠶⠿⢻⣿⣛⣦⣙⠻⣿
                 ⣿⣿⢿⣿⠏⠀⠀⡀⠀⠈⣿⢛⣽⣜⠯⣽⠀⠀⠀⠀⠙⢿⣷⣻⡀⢿
                 ⠐⠛⢿⣾⣖⣤⡀⠀⢀⡰⠿⢷⣶⣿⡇⠻⣖⣒⣒⣶⣿⣿⡟⢙⣶⣮
@@ -298,56 +267,6 @@ mod tests {
                 ⠀⠀⠀⠀⠁⠇⠡⠩⡫⢿⣝⡻⡮⣒⢽⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
                 ————————————————————————————-
             "#
-        ));
-        assert!(should_delete(
-            r#"
-                |￣￣￣￣￣￣￣￣￣￣￣|
-                        hola
-                |__________________|
-                    \ (•◡•) /
-                        \      /
-                        ---
-                        |   |
-            "#
-        ));
-        assert!(should_delete(
-            r#"
-                |￣￣￣￣￣￣￣￣￣￣￣|
-                        RANDOM
-                        RANDOM
-                        RANDOM
-                        RANDOM
-                        RANDOM
-                        RANDOM
-                        RANDOM
-                |__________________|
-                    \ (•◡•) /
-                        \      /
-                        ---
-                        |   |
-            "#
-        ));
-        assert!(should_delete(
-            r#"_________________________________ This chat is now in cute mode AYAYA _________________________________"#
-        ));
-        assert!(should_delete(r#"> < > < ><> <> <> <> <> <> <> <> <>"#));
-        assert!(should_delete(
-            r#"................................. This chat is now in cute mode AYAYA ................................."#
-        ));
-        assert!(should_delete(
-            r#"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! This chat is now in cute mode AYAYA !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"#
-        ));
-        assert!(should_delete(
-            r#"????????????????????????????????? This chat is now in cute mode AYAYA ?????????????????????????????????"#
-        ));
-        assert!(should_delete(
-            r#"foo????????????????????????????????? This chat is now in cute mode AYAYA ?????????????????????????????????foo"#
-        ));
-        assert!(should_delete(
-            r#"foo ????????????????????????????????? This chat is now in cute mode AYAYA ????????????????????????????????? foo"#
-        ));
-        assert!(should_delete(
-            r#"foo ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? This chat is now in cute mode AYAYA ????????????????????????????????? foo"#
         ));
     }
 }
