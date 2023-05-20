@@ -11,7 +11,6 @@ use xddmod::handlers::sniffa::core::Sniffa;
 async fn main() {
     let app_config = AppConfig::init();
     let channel = std::env::args().nth(1).unwrap();
-    let you = std::env::args().nth(2).unwrap().to_lowercase();
 
     let db_pool = SqlitePool::connect(app_config.database_url.as_ref()).await.unwrap();
 
@@ -29,7 +28,6 @@ async fn main() {
     let templates_env = xddmod::templates_env::build_global_templates_env();
 
     let npc = Npc {
-        you,
         irc_client: irc_client.clone(),
         db_pool: db_pool.clone(),
         templates_env: templates_env.clone(),
