@@ -9,7 +9,7 @@ fake = { git = "https://github.com/cksac/fake-rs", rev = "1c26a39", features = [
 lazy_static = "1.4.0"
 minijinja = "0.32.1"
 rand = "0.8"
-regex = "1.8.1"
+regex = "1.8.2"
 serde = "1.0.163"
 serde_json = "1.0.96"
 sqlx = { version = "0.6.3", features = ["runtime-tokio-native-tls", "uuid", "json", "chrono", "sqlite", "offline", "migrate"] }
