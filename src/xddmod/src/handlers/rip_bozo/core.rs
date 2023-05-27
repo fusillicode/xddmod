@@ -56,6 +56,7 @@ impl<'a> RipBozo<'a> {
 
                 if twitch::helpers::is_unauthorized_error(&error) {
                     eprintln!("Refreshing token");
+
                     self.token.refresh_token(self.helix_client.get_client()).await.unwrap();
                     self.delete_message_with_token_refresh(message, server_message).await
                 }
