@@ -1,5 +1,5 @@
+use std::sync::mpsc::Sender;
 use std::sync::Arc;
-use std::time::Duration;
 
 use axum::async_trait;
 use axum::extract::Query;
@@ -53,9 +53,8 @@ pub async fn authenticate<'a>(app_config: AppConfig) -> (MessageReceiver, IRCCli
 
     webbrowser::open(auth_url.as_str()).unwrap();
 
-    let app_state = Arc::new(AppState {
-        auth_response_step_1: Mutex::new(None),
-    });
+    let (sender, receiver) = std::sync::mpsc::channel::<AuthResponseStep1>();
+    let app_state = Arc::new(Mutex::new(sender));
 
     let app = Router::new()
         .route("/auth", get(auth_callback))
@@ -68,17 +67,11 @@ pub async fn authenticate<'a>(app_config: AppConfig) -> (MessageReceiver, IRCCli
             .unwrap();
     });
 
-    loop {
-        if app_state.auth_response_step_1.lock().await.is_some() {
-            break;
-        }
-        tokio::time::sleep(Duration::from_secs(2)).await;
-    }
+    let AuthResponseStep1 { code, state } = receiver.recv().unwrap();
 
     auth_server.abort();
     auth_server.await.unwrap_err().is_cancelled();
 
-    let AuthResponseStep1 { code, state } = app_state.auth_response_step_1.lock().await.clone().unwrap();
     let client = reqwest::Client::new();
 
     let user_token = user_token_builder
@@ -108,16 +101,12 @@ pub async fn authenticate<'a>(app_config: AppConfig) -> (MessageReceiver, IRCCli
 }
 
 async fn auth_callback(
-    State(app_state): State<Arc<AppState>>,
+    State(sender): State<Arc<Mutex<Sender<AuthResponseStep1>>>>,
     Query(auth_response_step_1): Query<AuthResponseStep1>,
 ) -> Response {
-    let mut guard = app_state.auth_response_step_1.lock().await;
-    *guard = Some(auth_response_step_1.clone());
+    let sender = sender.lock().await;
+    sender.send(auth_response_step_1).unwrap();
     Redirect::to("https://cdn.7tv.app/emote/63bb3450799f5d0ce4b80686/4x.webp").into_response()
-}
-
-struct AppState {
-    auth_response_step_1: Mutex<Option<AuthResponseStep1>>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
