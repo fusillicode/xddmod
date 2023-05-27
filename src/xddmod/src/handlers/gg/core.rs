@@ -36,6 +36,7 @@ impl<'a> Gg<'a> {
                 self.handler(),
                 &message.channel_login,
                 &message.message_text,
+                None,
                 &self.db_pool,
             )
             .await

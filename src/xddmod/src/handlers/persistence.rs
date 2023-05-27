@@ -28,8 +28,13 @@ impl Reply {
         handler: Handler,
         channel: &str,
         message_text: &str,
+        reply_to: Option<&str>,
         executor: impl SqliteExecutor<'a>,
     ) -> Vec<Reply> {
+        let message_text = reply_to
+            .map(|x| message_text.trim_start_matches(&format!("@{}", x)).trim_start())
+            .unwrap_or(message_text);
+
         Self::all(handler, channel, executor)
             .await
             .unwrap()

@@ -28,6 +28,7 @@ impl<'a> Npc<'a> {
                 self.handler(),
                 &message.channel_login,
                 &message.message_text,
+                message.reply_parent.as_ref().map(|x| x.reply_parent_user.name.as_str()),
                 &self.db_pool,
             )
             .await
