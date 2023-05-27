@@ -24,16 +24,7 @@ impl<'a> Npc<'a> {
 impl<'a> Npc<'a> {
     pub async fn handle(&self, server_message: &ServerMessage) {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
-            match Reply::matching(
-                self.handler(),
-                &message.channel_login,
-                &message.message_text,
-                message.reply_parent.as_ref().map(|x| x.reply_parent_user.name.as_str()),
-                &self.db_pool,
-            )
-            .await
-            .as_slice()
-            {
+            match Reply::matching(self.handler(), message, &self.db_pool).await.as_slice() {
                 [reply] => {
                     // FIXME: poor man throttling
                     match poor_man_throttling::should_throttle(message, reply) {

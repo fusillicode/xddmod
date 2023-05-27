@@ -7,6 +7,7 @@ use sqlx::sqlite::SqliteExecutor;
 use sqlx::types::chrono::DateTime;
 use sqlx::types::chrono::Utc;
 use sqlx::types::Json;
+use twitch_irc::message::PrivmsgMessage;
 
 #[derive(Debug, Clone)]
 pub struct Reply {
@@ -23,19 +24,34 @@ pub struct Reply {
     pub updated_at: DateTime<Utc>,
 }
 
+pub trait MatchableMessage {
+    fn channel(&self) -> &str;
+    fn text(&self) -> &str;
+}
+
+impl MatchableMessage for PrivmsgMessage {
+    fn channel(&self) -> &str {
+        &self.channel_login
+    }
+
+    fn text(&self) -> &str {
+        self.reply_parent
+            .as_ref()
+            .map(|x| x.reply_parent_user.name.as_str())
+            .map(|x| self.message_text.trim_start_matches(&format!("@{}", x)).trim_start())
+            .unwrap_or(&self.message_text)
+    }
+}
+
 impl Reply {
     pub async fn matching<'a>(
         handler: Handler,
-        channel: &str,
-        message_text: &str,
-        reply_to: Option<&str>,
+        matchable_message: &impl MatchableMessage,
         executor: impl SqliteExecutor<'a>,
     ) -> Vec<Reply> {
-        let message_text = reply_to
-            .map(|x| message_text.trim_start_matches(&format!("@{}", x)).trim_start())
-            .unwrap_or(message_text);
+        let matchable_message_text = matchable_message.text();
 
-        Self::all(handler, channel, executor)
+        Self::all(handler, matchable_message.channel(), executor)
             .await
             .unwrap()
             .into_iter()
@@ -44,7 +60,7 @@ impl Reply {
                     .case_insensitive(reply.case_insensitive)
                     .build()
                 {
-                    Ok(re) => re.is_match(message_text),
+                    Ok(re) => re.is_match(matchable_message_text),
                     Err(e) => {
                         eprintln!("Invalid pattern for reply {:?} error: {:?}", reply, e);
                         false
