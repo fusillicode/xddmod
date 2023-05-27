@@ -30,7 +30,7 @@ tokio = { workspace = true }
 tower = "0.4.13"
 twitch_api = { version = "0.7.0-rc.6", features = ["twitch_oauth2", "helix", "reqwest", "typed-builder"] }
 twitch_types = { version = "0.4.1", features = ["time"] }
-twitch-irc = { version = "5.0.0", features = ["with-serde", "refreshing-token-native-tls"] }
+twitch-irc = { git = "https://github.com/Retoon/twitch-irc-rs", "branch" = "reply_parent_feature", features = ["with-serde", "refreshing-token-native-tls"] }
 unicode-segmentation = "1.9.0"
 url = { version = "2.3.1", features = ["serde"] }
 webbrowser = "0.8.10"

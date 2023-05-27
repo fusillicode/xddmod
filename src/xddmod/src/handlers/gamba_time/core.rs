@@ -44,15 +44,7 @@ impl<'a> GambaTime<'a> {
 impl<'a> GambaTime<'a> {
     pub async fn handle(&self, server_message: &ServerMessage) {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
-            match Reply::matching(
-                self.handler(),
-                &message.channel_login,
-                &message.message_text,
-                &self.db_pool,
-            )
-            .await
-            .as_slice()
-            {
+            match Reply::matching(self.handler(), message, &self.db_pool).await.as_slice() {
                 [reply] => {
                     let prediction_request = GetPredictionsRequest::builder()
                         .broadcaster_id(self.broadcaster_id.clone())

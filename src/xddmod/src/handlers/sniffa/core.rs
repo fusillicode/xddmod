@@ -32,15 +32,7 @@ impl<'a> Sniffa<'a> {
 impl<'a> Sniffa<'a> {
     pub async fn handle(&self, server_message: &ServerMessage) {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
-            match Reply::matching(
-                self.handler(),
-                &message.channel_login,
-                &message.message_text,
-                &self.db_pool,
-            )
-            .await
-            .as_slice()
-            {
+            match Reply::matching(self.handler(), message, &self.db_pool).await.as_slice() {
                 [reply @ Reply {
                     additional_inputs: Some(additional_inputs),
                     ..

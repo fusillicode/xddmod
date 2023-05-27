@@ -7,6 +7,7 @@ use sqlx::sqlite::SqliteExecutor;
 use sqlx::types::chrono::DateTime;
 use sqlx::types::chrono::Utc;
 use sqlx::types::Json;
+use twitch_irc::message::PrivmsgMessage;
 
 #[derive(Debug, Clone)]
 pub struct Reply {
@@ -23,14 +24,37 @@ pub struct Reply {
     pub updated_at: DateTime<Utc>,
 }
 
+pub trait MatchableMessage {
+    fn channel(&self) -> &str;
+    fn text(&self) -> &str;
+}
+
+impl MatchableMessage for PrivmsgMessage {
+    fn channel(&self) -> &str {
+        &self.channel_login
+    }
+
+    fn text(&self) -> &str {
+        self.reply_parent
+            .as_ref()
+            .map(|x| {
+                self.message_text
+                    .trim_start_matches(&format!("@{}", x.reply_parent_user.name.as_str()))
+                    .trim_start()
+            })
+            .unwrap_or(&self.message_text)
+    }
+}
+
 impl Reply {
     pub async fn matching<'a>(
         handler: Handler,
-        channel: &str,
-        message_text: &str,
+        matchable_message: &impl MatchableMessage,
         executor: impl SqliteExecutor<'a>,
     ) -> Vec<Reply> {
-        Self::all(handler, channel, executor)
+        let matchable_message_text = matchable_message.text();
+
+        Self::all(handler, matchable_message.channel(), executor)
             .await
             .unwrap()
             .into_iter()
@@ -39,7 +63,7 @@ impl Reply {
                     .case_insensitive(reply.case_insensitive)
                     .build()
                 {
-                    Ok(re) => re.is_match(message_text),
+                    Ok(re) => re.is_match(matchable_message_text),
                     Err(e) => {
                         eprintln!("Invalid pattern for reply {:?} error: {:?}", reply, e);
                         false
@@ -101,4 +125,65 @@ pub enum Handler {
     Npc,
     RipBozo,
     Sniffa,
+}
+
+#[cfg(test)]
+mod tests {
+    use fake::Fake;
+    use fake::Faker;
+    use twitch_irc::message::IRCMessage;
+    use twitch_irc::message::IRCTags;
+    use twitch_irc::message::ReplyParent;
+    use twitch_irc::message::TwitchUserBasics;
+
+    use super::*;
+
+    #[test]
+    fn matchable_message_text_works_as_expected() {
+        assert_eq!("@foo bar", dummy_privmsg_message("@foo bar".into(), None).text());
+        assert_eq!(
+            "bar",
+            dummy_privmsg_message("@foo bar".into(), Some("foo".into())).text()
+        );
+        assert_eq!(
+            "@foo bar",
+            dummy_privmsg_message("@foo bar".into(), Some("baz".into())).text()
+        )
+    }
+
+    fn dummy_privmsg_message(message_text: String, reply_parent_user_name: Option<String>) -> PrivmsgMessage {
+        PrivmsgMessage {
+            channel_login: Faker.fake(),
+            channel_id: Faker.fake(),
+            message_text,
+            reply_parent: reply_parent_user_name.map(|name| ReplyParent {
+                message_id: Faker.fake(),
+                reply_parent_user: TwitchUserBasics {
+                    id: Faker.fake(),
+                    login: Faker.fake(),
+                    name,
+                },
+                message_text: Faker.fake(),
+            }),
+            is_action: Faker.fake(),
+            sender: TwitchUserBasics {
+                id: Faker.fake(),
+                login: Faker.fake(),
+                name: Faker.fake(),
+            },
+            badge_info: vec![],
+            badges: vec![],
+            bits: Faker.fake(),
+            name_color: None,
+            emotes: vec![],
+            message_id: Faker.fake(),
+            server_timestamp: Faker.fake(),
+            source: IRCMessage {
+                tags: IRCTags::new(),
+                prefix: None,
+                command: Faker.fake(),
+                params: Faker.fake(),
+            },
+        }
+    }
 }
