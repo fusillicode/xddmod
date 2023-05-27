@@ -37,8 +37,11 @@ impl MatchableMessage for PrivmsgMessage {
     fn text(&self) -> &str {
         self.reply_parent
             .as_ref()
-            .map(|x| x.reply_parent_user.name.as_str())
-            .map(|x| self.message_text.trim_start_matches(&format!("@{}", x)).trim_start())
+            .map(|x| {
+                self.message_text
+                    .trim_start_matches(&format!("@{}", x.reply_parent_user.name.as_str()))
+                    .trim_start()
+            })
             .unwrap_or(&self.message_text)
     }
 }
@@ -122,4 +125,65 @@ pub enum Handler {
     Npc,
     RipBozo,
     Sniffa,
+}
+
+#[cfg(test)]
+mod tests {
+    use fake::Fake;
+    use fake::Faker;
+    use twitch_irc::message::IRCMessage;
+    use twitch_irc::message::IRCTags;
+    use twitch_irc::message::ReplyParent;
+    use twitch_irc::message::TwitchUserBasics;
+
+    use super::*;
+
+    #[test]
+    fn matchable_message_text_works_as_expected() {
+        assert_eq!("@foo bar", dummy_privmsg_message("@foo bar".into(), None).text());
+        assert_eq!(
+            "bar",
+            dummy_privmsg_message("@foo bar".into(), Some("foo".into())).text()
+        );
+        assert_eq!(
+            "@foo bar",
+            dummy_privmsg_message("@foo bar".into(), Some("baz".into())).text()
+        )
+    }
+
+    fn dummy_privmsg_message(message_text: String, reply_parent_user_name: Option<String>) -> PrivmsgMessage {
+        PrivmsgMessage {
+            channel_login: Faker.fake(),
+            channel_id: Faker.fake(),
+            message_text,
+            reply_parent: reply_parent_user_name.map(|name| ReplyParent {
+                message_id: Faker.fake(),
+                reply_parent_user: TwitchUserBasics {
+                    id: Faker.fake(),
+                    login: Faker.fake(),
+                    name,
+                },
+                message_text: Faker.fake(),
+            }),
+            is_action: Faker.fake(),
+            sender: TwitchUserBasics {
+                id: Faker.fake(),
+                login: Faker.fake(),
+                name: Faker.fake(),
+            },
+            badge_info: vec![],
+            badges: vec![],
+            bits: Faker.fake(),
+            name_color: None,
+            emotes: vec![],
+            message_id: Faker.fake(),
+            server_timestamp: Faker.fake(),
+            source: IRCMessage {
+                tags: IRCTags::new(),
+                prefix: None,
+                command: Faker.fake(),
+                params: Faker.fake(),
+            },
+        }
+    }
 }
