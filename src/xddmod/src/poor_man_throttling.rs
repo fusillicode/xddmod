@@ -1,5 +1,6 @@
 use twitch_irc::message::PrivmsgMessage;
 
+use crate::apis::twitch;
 use crate::handlers::persistence::Reply;
 
 // FIXME: poor man throttling
@@ -10,11 +11,7 @@ lazy_static::lazy_static! {
 }
 
 pub fn should_throttle(message: &PrivmsgMessage, reply: &Reply) -> anyhow::Result<bool> {
-    if message
-        .badges
-        .iter()
-        .any(|b| b.name == "moderator" || b.name == "broadcaster")
-    {
+    if twitch::helpers::is_from_streamer_or_mod(message) {
         return Ok(false);
     }
 

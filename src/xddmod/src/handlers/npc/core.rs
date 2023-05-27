@@ -10,7 +10,6 @@ use crate::handlers::persistence::Reply;
 use crate::poor_man_throttling;
 
 pub struct Npc<'a> {
-    pub you: String,
     pub irc_client: IRCClient,
     pub db_pool: SqlitePool,
     pub templates_env: Environment<'a>,

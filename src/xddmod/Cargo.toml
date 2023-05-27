@@ -10,6 +10,7 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = { workspace = true }
+async-recursion = "1.0.4"
 axum = "0.6.18"
 chrono = { workspace = true }
 chrono-tz = "0.8.1"
@@ -30,5 +31,6 @@ tower = "0.4.13"
 twitch_api = { version = "0.7.0-rc.6", features = ["twitch_oauth2", "helix", "reqwest", "typed-builder"] }
 twitch_types = { version = "0.4.1", features = ["time"] }
 twitch-irc = { version = "5.0.0", features = ["with-serde", "refreshing-token-native-tls"] }
+unicode-segmentation = "1.9.0"
 url = { version = "2.3.1", features = ["serde"] }
 webbrowser = "0.8.10"
