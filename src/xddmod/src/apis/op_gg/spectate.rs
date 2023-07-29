@@ -27,6 +27,17 @@ pub enum SpectateStatus {
     InGame(InGame),
 }
 
+impl SpectateStatus {
+    pub fn participant_by_summoner_id(&self, summoner_id: i64) -> Option<&Participant> {
+        match self {
+            SpectateStatus::NotInGame(_) => None,
+            SpectateStatus::InGame(InGame {
+                data: Game { participants, .. },
+            }) => participants.iter().find(|x| x.summoner.id == summoner_id),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Dummy)]
 pub struct NotInGame {
     pub code: i64,
@@ -67,7 +78,7 @@ pub struct Champion {
     pub name: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Dummy)]
+#[derive(Serialize, Deserialize, Debug, Dummy, Clone)]
 pub struct Participant {
     pub summoner: Summoner,
     pub team_key: TeamKey,
@@ -79,7 +90,7 @@ pub struct Participant {
     pub most_champion_stat: Option<HashMap<String, i64>>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Dummy)]
+#[derive(Serialize, Deserialize, Debug, Dummy, Clone)]
 pub struct Summoner {
     pub id: i64,
     pub summoner_id: String,
@@ -95,7 +106,7 @@ pub struct Summoner {
     pub league_stats: Vec<LeagueStat>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Dummy)]
+#[derive(Serialize, Deserialize, Debug, Dummy, Clone)]
 pub struct RuneBuild {
     pub primary_page_id: i64,
     pub primary_rune_ids: Vec<i64>,
@@ -104,7 +115,7 @@ pub struct RuneBuild {
     pub stat_mod_ids: Vec<i64>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Dummy)]
+#[derive(Serialize, Deserialize, Debug, Dummy, Clone)]
 pub struct LeagueStat {
     pub queue_info: QueueInfo,
     pub tier_info: TierInfo,
@@ -118,13 +129,13 @@ pub struct LeagueStat {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Dummy)]
+#[derive(Serialize, Deserialize, Debug, Dummy, Clone)]
 pub struct QueueInfo {
     pub id: i64,
     pub game_type: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Dummy)]
+#[derive(Serialize, Deserialize, Debug, Dummy, Clone)]
 pub struct PreviousSeason {
     pub season_id: i64,
     pub tier_info: TierInfo,
