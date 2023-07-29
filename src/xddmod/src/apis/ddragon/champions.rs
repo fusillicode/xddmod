@@ -12,7 +12,7 @@ pub async fn get_champion(champion_key: impl Into<ChampionKey>) -> anyhow::Resul
 }
 
 pub async fn get_champions() -> anyhow::Result<HashMap<ChampionKey, Champion>> {
-    let api_response: ApiResponse = reqwest::get(format!("{}/champions.json", DDRAGON_API))
+    let api_response: ApiResponse = reqwest::get(format!("{}/champion.json", DDRAGON_API))
         .await?
         .json()
         .await?;
