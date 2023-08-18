@@ -33,4 +33,4 @@ twitch_types = { version = "0.4.2", features = ["time"] }
 twitch-irc = { git = "https://github.com/Retoon/twitch-irc-rs", "branch" = "reply_parent_feature", features = ["with-serde", "refreshing-token-native-tls"] }
 unicode-segmentation = "1.9.0"
 url = { version = "2.4.0", features = ["serde"] }
-webbrowser = "0.8.10"
+webbrowser = "0.8.11"
