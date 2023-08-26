@@ -125,6 +125,7 @@ pub enum Handler {
     Npc,
     RipBozo,
     Sniffa,
+    TheGrind,
 }
 
 #[cfg(test)]

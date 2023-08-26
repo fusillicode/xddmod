@@ -6,6 +6,7 @@ use xddmod::handlers::gg::core::Gg;
 use xddmod::handlers::npc::core::Npc;
 use xddmod::handlers::rip_bozo::core::RipBozo;
 use xddmod::handlers::sniffa::core::Sniffa;
+use xddmod::handlers::the_grind::core::TheGrind;
 
 #[tokio::main]
 async fn main() {
@@ -46,7 +47,12 @@ async fn main() {
         broadcaster_id: broadcaster.id,
         token: user_token,
         helix_client,
-        db_pool,
+        db_pool: db_pool.clone(),
+    };
+    let the_grind = TheGrind {
+        irc_client: irc_client.clone(),
+        db_pool: db_pool.clone(),
+        templates_env: templates_env.clone(),
     };
 
     #[allow(clippy::single_match)]
@@ -56,6 +62,7 @@ async fn main() {
             npc.handle(&server_message).await;
             gg.handle(&server_message).await;
             sniffa.handle(&server_message).await;
+            the_grind.handle(&server_message).await;
         }
     })
     .await
