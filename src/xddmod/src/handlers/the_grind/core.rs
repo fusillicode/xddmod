@@ -57,7 +57,6 @@ impl<'a> TheGrind<'a> {
                             )
                             .await
                             .unwrap();
-                            dbg!(&summoner);
 
                             let template_inputs = TemplateInputs { summoner };
 
