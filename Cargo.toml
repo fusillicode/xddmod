@@ -9,7 +9,7 @@ fake = { version = "2.8.0", features = ["derive", "chrono", "serde_json"] }
 lazy_static = "1.4.0"
 minijinja = "0.32.1"
 rand = "0.8"
-regex = "1.9.3"
+regex = "1.9.4"
 serde = "1.0.188"
 serde_json = "1.0.105"
 sqlx = { version = "0.6.3", features = ["runtime-tokio-native-tls", "uuid", "json", "chrono", "sqlite", "offline", "migrate"] }
