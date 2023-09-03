@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
 use fake::Dummy;
+use fake::Fake;
+use fake::Faker;
 use serde::Deserialize;
 use serde::Serialize;
 use sqlx::types::Json;
@@ -28,7 +30,7 @@ pub struct ApiResponse {
     pub data: HashMap<String, Champion>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Dummy)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Champion {
     pub version: String,
     pub id: String,
@@ -36,20 +38,33 @@ pub struct Champion {
     pub name: String,
     pub title: String,
     pub blurb: String,
-    pub info: Info,
-    pub image: Image,
-    pub tags: Vec<Tag>,
+    pub info: Json<Info>,
+    pub image: Json<Image>,
+    pub tags: Json<Vec<Tag>>,
     pub partype: String,
-    pub stats: HashMap<String, f64>,
+    pub stats: Json<HashMap<String, f64>>,
+}
+
+impl Dummy<Faker> for Champion {
+    fn dummy_with_rng<R: rand::Rng + ?Sized>(_config: &Faker, rng: &mut R) -> Self {
+        Self {
+            version: Faker.fake_with_rng(rng),
+            id: Faker.fake_with_rng(rng),
+            key: Faker.fake_with_rng(rng),
+            name: Faker.fake_with_rng(rng),
+            title: Faker.fake_with_rng(rng),
+            blurb: Faker.fake_with_rng(rng),
+            info: Json(Faker.fake_with_rng(rng)),
+            image: Json(Faker.fake_with_rng(rng)),
+            tags: Json(Faker.fake_with_rng(rng)),
+            partype: Faker.fake_with_rng(rng),
+            stats: Json(Faker.fake_with_rng(rng)),
+        }
+    }
 }
 
 impl Champion {
-    pub async fn insert(self, executor: impl SqliteExecutor<'_>) -> sqlx::Result<()> {
-        let info = Json(self.info);
-        let image = Json(self.image);
-        let tags = Json(self.tags);
-        let stats = Json(self.stats);
-
+    pub async fn insert(&self, executor: impl SqliteExecutor<'_>) -> sqlx::Result<()> {
         sqlx::query!(
             r#"
                 insert into champions (
@@ -73,16 +88,25 @@ impl Champion {
             self.name as _,
             self.title as _,
             self.blurb as _,
-            info as _,
-            image as _,
-            tags as _,
+            self.info as _,
+            self.image as _,
+            self.tags as _,
             self.partype as _,
-            stats as _,
+            self.stats as _,
         )
         .execute(executor)
         .await
         .map(|_| ())
     }
+
+    // pub async fn by_key(
+    //     key: impl Into<ChampionKey>,
+    //     executor: impl SqliteExecutor<'_>,
+    // ) -> sqlx::Result<Option<Champion>> { sqlx::query_as!( Self, r#" select version as "version!: _", id as "id!: _",
+    //   key as "key!: _", name as "name!: _", title as "title!: _", blurb as "blurb!: _", info as "info!: _", image as
+    //   "image!: _", tags as "tags!: _", partype as "partype!: _", stats as "stats!: _" from champions where key = $1
+    //   "#, key as _ ) .fetch_optional(executor) .await
+    // }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Dummy)]
