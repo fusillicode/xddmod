@@ -11,7 +11,7 @@ use url::Url;
 pub struct AppConfig {
     pub socket_addr: SocketAddr,
     pub server_url: Url,
-    pub database_url: Url,
+    pub db_url: Url,
     pub client_id: ClientId,
     pub client_secret: ClientSecret,
 }
