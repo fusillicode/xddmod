@@ -4,8 +4,6 @@ use serde::Serialize;
 
 pub mod champions;
 
-pub const DDRAGON_API: &str = "https://ddragon.leagueoflegends.com/cdn/13.8.1/data/en_US";
-
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash, Dummy)]
 pub struct ChampionKey(String);
 

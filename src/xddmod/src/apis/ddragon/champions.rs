@@ -5,18 +5,14 @@ use serde::Deserialize;
 use serde::Serialize;
 
 use crate::apis::ddragon::ChampionKey;
-use crate::apis::ddragon::DDRAGON_API;
 
 pub async fn get_champion(champion_key: impl Into<ChampionKey>) -> anyhow::Result<Option<Champion>> {
     Ok(get_champions().await?.get(&champion_key.into()).cloned())
 }
 
 pub async fn get_champions() -> anyhow::Result<HashMap<ChampionKey, Champion>> {
-    let api_response: ApiResponse = reqwest::get(format!("{}/champion.json", DDRAGON_API))
-        .await?
-        .json()
-        .await?;
-
+    // FIXME: pls 🥲
+    let api_response: ApiResponse = serde_json::from_str(&std::fs::read_to_string("./champion.json")?)?;
     Ok(api_response.data.into_values().map(|c| (c.key.clone(), c)).collect())
 }
 
