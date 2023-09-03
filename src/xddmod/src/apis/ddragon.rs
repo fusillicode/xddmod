@@ -4,7 +4,8 @@ use serde::Serialize;
 
 pub mod champions;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash, Dummy)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash, Dummy, sqlx::Type)]
+#[sqlx(transparent)]
 pub struct ChampionKey(String);
 
 impl From<String> for ChampionKey {

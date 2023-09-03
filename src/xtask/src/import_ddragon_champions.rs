@@ -1,5 +1,10 @@
+use std::collections::HashMap;
+
 use reqwest::Url;
-use xddmod::apis::ddragon::champions::ApiResponse;
+use serde::Deserialize;
+use serde::Serialize;
+use xddmod::apis::ddragon::champions::Champion;
+use xddmod::apis::ddragon::champions::Kind;
 
 #[derive(clap::Args)]
 pub struct ImportDdragonChampions {
@@ -20,4 +25,13 @@ impl ImportDdragonChampions {
 
         Ok(())
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApiResponse {
+    #[serde(alias = "type")]
+    pub kind: Kind,
+    pub format: String,
+    pub version: String,
+    pub data: HashMap<String, Champion>,
 }
