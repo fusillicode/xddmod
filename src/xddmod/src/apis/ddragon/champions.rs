@@ -45,24 +45,6 @@ pub struct Champion {
     pub stats: Json<HashMap<String, f64>>,
 }
 
-impl Dummy<Faker> for Champion {
-    fn dummy_with_rng<R: rand::Rng + ?Sized>(_config: &Faker, rng: &mut R) -> Self {
-        Self {
-            version: Faker.fake_with_rng(rng),
-            id: Faker.fake_with_rng(rng),
-            key: Faker.fake_with_rng(rng),
-            name: Faker.fake_with_rng(rng),
-            title: Faker.fake_with_rng(rng),
-            blurb: Faker.fake_with_rng(rng),
-            info: Json(Faker.fake_with_rng(rng)),
-            image: Json(Faker.fake_with_rng(rng)),
-            tags: Json(Faker.fake_with_rng(rng)),
-            partype: Faker.fake_with_rng(rng),
-            stats: Json(Faker.fake_with_rng(rng)),
-        }
-    }
-}
-
 impl Champion {
     pub async fn insert(&self, executor: impl SqliteExecutor<'_>) -> sqlx::Result<()> {
         sqlx::query!(
@@ -99,14 +81,48 @@ impl Champion {
         .map(|_| ())
     }
 
-    // pub async fn by_key(
-    //     key: impl Into<ChampionKey>,
-    //     executor: impl SqliteExecutor<'_>,
-    // ) -> sqlx::Result<Option<Champion>> { sqlx::query_as!( Self, r#" select version as "version!: _", id as "id!: _",
-    //   key as "key!: _", name as "name!: _", title as "title!: _", blurb as "blurb!: _", info as "info!: _", image as
-    //   "image!: _", tags as "tags!: _", partype as "partype!: _", stats as "stats!: _" from champions where key = $1
-    //   "#, key as _ ) .fetch_optional(executor) .await
-    // }
+    pub async fn by_key(key: ChampionKey, executor: impl SqliteExecutor<'_>) -> sqlx::Result<Option<Champion>> {
+        sqlx::query_as!(
+            Self,
+            r#"
+                select
+                    version as "version!: _",
+                    id as "id!: _",
+                    key as "key!: ChampionKey",
+                    name as "name!: _",
+                    title as "title!: _",
+                    blurb as "blurb!: _",
+                    info as "info!: Json<Info>",
+                    image as "image!: Json<Image>", 
+                    tags as "tags!: Json<Vec<Tag>>", 
+                    partype as "partype!: _", 
+                    stats as "stats!: Json<HashMap<String, f64>>" 
+                from champions 
+                where key = $1
+            "#,
+            key as _
+        )
+        .fetch_optional(executor)
+        .await
+    }
+}
+
+impl Dummy<Faker> for Champion {
+    fn dummy_with_rng<R: rand::Rng + ?Sized>(_config: &Faker, rng: &mut R) -> Self {
+        Self {
+            version: Faker.fake_with_rng(rng),
+            id: Faker.fake_with_rng(rng),
+            key: Faker.fake_with_rng(rng),
+            name: Faker.fake_with_rng(rng),
+            title: Faker.fake_with_rng(rng),
+            blurb: Faker.fake_with_rng(rng),
+            info: Json(Faker.fake_with_rng(rng)),
+            image: Json(Faker.fake_with_rng(rng)),
+            tags: Json(Faker.fake_with_rng(rng)),
+            partype: Faker.fake_with_rng(rng),
+            stats: Json(Faker.fake_with_rng(rng)),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Dummy)]
