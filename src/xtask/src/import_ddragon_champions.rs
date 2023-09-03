@@ -4,6 +4,7 @@ use reqwest::Url;
 use serde::Deserialize;
 use serde::Serialize;
 use sqlx::types::Json;
+use sqlx::SqlitePool;
 use xddmod::apis::ddragon::champions::Image;
 use xddmod::apis::ddragon::champions::Info;
 use xddmod::apis::ddragon::champions::Kind;
@@ -22,17 +23,25 @@ pub struct ImportDdragonChampions {
 
 impl ImportDdragonChampions {
     pub async fn run(self) -> anyhow::Result<()> {
-        let _api_response: ApiResponse = reqwest::get(format!("{}/champion.json", self.ddragon_api_url))
+        let db_pool = SqlitePool::connect(self.db_url.as_ref()).await.unwrap();
+
+        let api_response: ApiResponse = reqwest::get(format!("{}/champion.json", self.ddragon_api_url))
             .await?
             .json()
             .await?;
+
+        for champion in api_response.data.into_values() {
+            xddmod::apis::ddragon::champions::Champion::from(champion)
+                .insert(&db_pool)
+                .await;
+        }
 
         Ok(())
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ApiResponse {
+struct ApiResponse {
     #[serde(alias = "type")]
     pub kind: Kind,
     pub format: String,
@@ -41,7 +50,7 @@ pub struct ApiResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Champion {
+struct Champion {
     pub version: String,
     pub id: String,
     pub key: ChampionKey,
