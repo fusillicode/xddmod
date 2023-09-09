@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 
 use fake::Dummy;
-use fake::Fake;
-use fake::Faker;
 use serde::Deserialize;
 use serde::Serialize;
 use sqlx::types::Json;
@@ -10,7 +8,7 @@ use sqlx::SqliteExecutor;
 
 use crate::apis::ddragon::ChampionKey;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Dummy)]
 pub struct Champion {
     pub version: String,
     pub id: String,
@@ -18,15 +16,20 @@ pub struct Champion {
     pub name: String,
     pub title: String,
     pub blurb: String,
-    pub info: Json<Info>,
-    pub image: Json<Image>,
-    pub tags: Json<Vec<Tag>>,
+    pub info: Info,
+    pub image: Image,
+    pub tags: Vec<Tag>,
     pub partype: String,
-    pub stats: Json<HashMap<String, f64>>,
+    pub stats: HashMap<String, f64>,
 }
 
 impl Champion {
     pub async fn insert(&self, executor: impl SqliteExecutor<'_>) -> sqlx::Result<()> {
+        let info = Json(&self.info);
+        let image = Json(&self.image);
+        let tags = Json(&self.tags);
+        let stats = Json(&self.stats);
+
         sqlx::query!(
             r#"
                 insert into champions (
@@ -50,11 +53,11 @@ impl Champion {
             self.name as _,
             self.title as _,
             self.blurb as _,
-            self.info as _,
-            self.image as _,
-            self.tags as _,
+            info as _,
+            image as _,
+            tags as _,
             self.partype as _,
-            self.stats as _,
+            stats as _,
         )
         .execute(executor)
         .await
@@ -62,20 +65,19 @@ impl Champion {
     }
 
     pub async fn by_key(key: ChampionKey, executor: impl SqliteExecutor<'_>) -> sqlx::Result<Option<Champion>> {
-        sqlx::query_as!(
-            Self,
+        Ok(sqlx::query!(
             r#"
                 select
-                    version as "version!: _",
-                    id as "id!: _",
+                    version,
+                    id,
                     key as "key!: ChampionKey",
-                    name as "name!: _",
-                    title as "title!: _",
-                    blurb as "blurb!: _",
+                    name,
+                    title,
+                    blurb,
                     info as "info!: Json<Info>",
                     image as "image!: Json<Image>", 
                     tags as "tags!: Json<Vec<Tag>>", 
-                    partype as "partype!: _", 
+                    partype, 
                     stats as "stats!: Json<HashMap<String, f64>>" 
                 from champions 
                 where key = $1
@@ -83,30 +85,25 @@ impl Champion {
             key as _
         )
         .fetch_optional(executor)
-        .await
+        .await?
+        .map(|r| Self {
+            version: r.version,
+            id: r.id,
+            key: r.key,
+            name: r.name,
+            title: r.title,
+            blurb: r.blurb,
+            info: r.info.0,
+            image: r.image.0,
+            tags: r.tags.0,
+            partype: r.partype,
+            stats: r.stats.0,
+        }))
     }
 
     pub async fn truncate(executor: impl SqliteExecutor<'_>) -> sqlx::Result<()> {
         sqlx::query!(r#"delete from champions"#).execute(executor).await?;
         Ok(())
-    }
-}
-
-impl Dummy<Faker> for Champion {
-    fn dummy_with_rng<R: rand::Rng + ?Sized>(_config: &Faker, rng: &mut R) -> Self {
-        Self {
-            version: Faker.fake_with_rng(rng),
-            id: Faker.fake_with_rng(rng),
-            key: Faker.fake_with_rng(rng),
-            name: Faker.fake_with_rng(rng),
-            title: Faker.fake_with_rng(rng),
-            blurb: Faker.fake_with_rng(rng),
-            info: Json(Faker.fake_with_rng(rng)),
-            image: Json(Faker.fake_with_rng(rng)),
-            tags: Json(Faker.fake_with_rng(rng)),
-            partype: Faker.fake_with_rng(rng),
-            stats: Json(Faker.fake_with_rng(rng)),
-        }
     }
 }
 
