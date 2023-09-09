@@ -2,7 +2,7 @@ use fake::Dummy;
 use serde::Deserialize;
 use serde::Serialize;
 
-pub mod champions;
+pub mod champion;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash, Dummy, sqlx::Type)]
 #[sqlx(transparent)]

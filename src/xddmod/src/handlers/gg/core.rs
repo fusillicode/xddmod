@@ -7,7 +7,7 @@ use sqlx::SqlitePool;
 use twitch_irc::message::PrivmsgMessage;
 use twitch_irc::message::ServerMessage;
 
-use crate::apis::ddragon::champions::Champion;
+use crate::apis::ddragon::champion::Champion;
 use crate::apis::op_gg;
 use crate::apis::op_gg::games::Game;
 use crate::apis::op_gg::Region;

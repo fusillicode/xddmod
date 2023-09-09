@@ -4,11 +4,11 @@ use reqwest::Url;
 use serde::Deserialize;
 use serde::Serialize;
 use sqlx::SqlitePool;
-use xddmod::apis::ddragon::champions::Champion;
-use xddmod::apis::ddragon::champions::Type;
+use xddmod::apis::ddragon::champion::Champion;
+use xddmod::apis::ddragon::champion::Type;
 
 #[derive(clap::Args)]
-pub struct ImportDdragonChampions {
+pub struct ImportDdragonChampion {
     /// Base url of ddragon API
     #[arg(long)]
     ddragon_api_base_url: Url,
@@ -17,7 +17,7 @@ pub struct ImportDdragonChampions {
     db_url: Url,
 }
 
-impl ImportDdragonChampions {
+impl ImportDdragonChampion {
     pub async fn run(self) -> anyhow::Result<()> {
         let db_pool = SqlitePool::connect(self.db_url.as_ref()).await.unwrap();
 
