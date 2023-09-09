@@ -15,6 +15,11 @@ use unicode_segmentation::UnicodeSegmentation;
 use crate::apis::twitch;
 use crate::handlers::persistence::Handler;
 
+lazy_static! {
+    static ref EMOJI_REGEX: Regex = Regex::new(r"\p{Emoji}").unwrap();
+    static ref MENTION_REGEX: Regex = Regex::new(r"(@(\w+))").unwrap();
+}
+
 pub struct RipBozo<'a> {
     pub broadcaster_id: UserId,
     pub token: UserToken,
@@ -85,11 +90,6 @@ impl<'a> RipBozo<'a> {
             }
         }
     }
-}
-
-lazy_static! {
-    static ref EMOJI_REGEX: Regex = Regex::new(r"\p{Emoji}").unwrap();
-    static ref MENTION_REGEX: Regex = Regex::new(r"(@(\w+))").unwrap();
 }
 
 #[derive(Debug, PartialEq)]
