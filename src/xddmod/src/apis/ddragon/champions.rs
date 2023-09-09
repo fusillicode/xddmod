@@ -10,26 +10,6 @@ use sqlx::SqliteExecutor;
 
 use crate::apis::ddragon::ChampionKey;
 
-pub async fn get_champion(champion_key: impl Into<ChampionKey>) -> anyhow::Result<Option<Champion>> {
-    Ok(get_champions().await?.get(&champion_key.into()).cloned())
-}
-
-pub async fn get_champions() -> anyhow::Result<HashMap<ChampionKey, Champion>> {
-    // FIXME: pls 🥲
-    let api_response: ApiResponse = serde_json::from_str(&std::fs::read_to_string("./champion.json")?)?;
-    Ok(api_response.data.into_values().map(|c| (c.key.clone(), c)).collect())
-}
-
-// FIXME: remove this after xtask import is ready
-#[derive(Debug, Clone, Serialize, Deserialize, Dummy)]
-pub struct ApiResponse {
-    #[serde(alias = "type")]
-    pub kind: Kind,
-    pub format: String,
-    pub version: String,
-    pub data: HashMap<String, Champion>,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Champion {
     pub version: String,
@@ -105,6 +85,11 @@ impl Champion {
         .fetch_optional(executor)
         .await
     }
+
+    pub async fn truncate(executor: impl SqliteExecutor<'_>) -> sqlx::Result<()> {
+        sqlx::query!(r#"delete from champions"#).execute(executor).await?;
+        Ok(())
+    }
 }
 
 impl Dummy<Faker> for Champion {
@@ -129,7 +114,7 @@ impl Dummy<Faker> for Champion {
 pub struct Image {
     pub full: String,
     pub sprite: Sprite,
-    pub group: Kind,
+    pub group: Type,
     pub x: i64,
     pub y: i64,
     pub w: i64,
@@ -146,7 +131,7 @@ pub struct Info {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Dummy, sqlx::Type)]
 #[sqlx(type_name = "TEXT")]
-pub enum Kind {
+pub enum Type {
     #[serde(alias = "champion")]
     Champion,
 }

@@ -7,15 +7,15 @@ use sqlx::types::Json;
 use sqlx::SqlitePool;
 use xddmod::apis::ddragon::champions::Image;
 use xddmod::apis::ddragon::champions::Info;
-use xddmod::apis::ddragon::champions::Kind;
 use xddmod::apis::ddragon::champions::Tag;
+use xddmod::apis::ddragon::champions::Type;
 use xddmod::apis::ddragon::ChampionKey;
 
 #[derive(clap::Args)]
 pub struct ImportDdragonChampions {
     /// Base url of ddragon API
     #[arg(long)]
-    ddragon_api_url: Url,
+    ddragon_api_base_url: Url,
     /// DB Url
     #[arg(long)]
     db_url: Url,
@@ -25,16 +25,22 @@ impl ImportDdragonChampions {
     pub async fn run(self) -> anyhow::Result<()> {
         let db_pool = SqlitePool::connect(self.db_url.as_ref()).await.unwrap();
 
-        let api_response: ApiResponse = reqwest::get(format!("{}/champion.json", self.ddragon_api_url))
+        let api_response: ApiResponse = reqwest::get(format!("{}/champion.json", self.ddragon_api_base_url))
             .await?
             .json()
             .await?;
 
+        let mut tx = db_pool.begin().await.unwrap();
+        xddmod::apis::ddragon::champions::Champion::truncate(&mut tx)
+            .await
+            .unwrap();
         for champion in api_response.data.into_values() {
             xddmod::apis::ddragon::champions::Champion::from(champion)
-                .insert(&db_pool)
-                .await;
+                .insert(&mut tx)
+                .await
+                .unwrap();
         }
+        tx.commit().await.unwrap();
 
         Ok(())
     }
@@ -42,8 +48,7 @@ impl ImportDdragonChampions {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct ApiResponse {
-    #[serde(alias = "type")]
-    pub kind: Kind,
+    pub r#type: Type,
     pub format: String,
     pub version: String,
     pub data: HashMap<String, Champion>,
