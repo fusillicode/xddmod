@@ -36,10 +36,10 @@ impl<'a> RipBozo<'a> {
             }
 
             let mentions = Mentions::new(&message.message_text);
-            let (mut real_mentions, error_mentions) = mentions.real_ones(&self.helix_client, &self.token).await;
-            let mut maybe_mentions = error_mentions.into_iter().fold(vec![], |mut acc, (mention, error)| {
+            let (mut real_mentions, errors) = mentions.real_ones(&self.helix_client, &self.token).await;
+            let mut maybe_mentions = errors.into_iter().fold(vec![], |mut acc, (mention, error)| {
                 eprintln!(
-                    "Cannot determine if mention {:?} is real or not due to error {:?}",
+                    "Cannot determine if mention {:?} is real due to error {:?}",
                     mention, error
                 );
                 acc.push(mention);
@@ -47,13 +47,9 @@ impl<'a> RipBozo<'a> {
             });
             real_mentions.append(&mut maybe_mentions);
 
-            let message_without_mentions = {
-                let mut message_text = message.message_text.clone();
-                for real_mention in real_mentions {
-                    message_text = message_text.replace(real_mention.handle, &message_text);
-                }
-                message_text
-            };
+            let message_without_mentions = real_mentions.iter().fold(message.message_text.clone(), |acc, mention| {
+                acc.replace(mention.handle, "")
+            });
 
             let text_stats = TextStats::new(&message_without_mentions);
             if text_stats.should_delete() {
