@@ -18,6 +18,7 @@ async fn main() {
     let (mut incoming_messages, irc_client, user_token) = auth::authenticate(app_config.clone()).await;
 
     let helix_client: HelixClient<'static, reqwest::Client> = HelixClient::default();
+
     let broadcaster = helix_client
         .get_user_from_login(&channel, &user_token)
         .await
