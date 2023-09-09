@@ -1,7 +1,9 @@
 use async_recursion::async_recursion;
 use lazy_static::lazy_static;
+use regex::Captures;
 use regex::Regex;
 use sqlx::SqlitePool;
+use twitch_api::helix::ClientRequestError;
 use twitch_api::twitch_oauth2::TwitchToken;
 use twitch_api::twitch_oauth2::UserToken;
 use twitch_api::HelixClient;
@@ -29,7 +31,32 @@ impl<'a> RipBozo<'a> {
 impl<'a> RipBozo<'a> {
     pub async fn handle(&mut self, server_message: &ServerMessage) {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
-            if !twitch::helpers::is_from_streamer_or_mod(message) && should_delete(&message.message_text) {
+            if twitch::helpers::is_from_streamer_or_mod(message) {
+                return;
+            }
+
+            let mentions = Mentions::new(&message.message_text);
+            let (mut real_mentions, error_mentions) = mentions.real_ones(&self.helix_client, &self.token).await;
+            let mut maybe_mentions = error_mentions.into_iter().fold(vec![], |mut acc, (mention, error)| {
+                eprintln!(
+                    "Cannot determine if mention {:?} is real or not due to error {:?}",
+                    mention, error
+                );
+                acc.push(mention);
+                acc
+            });
+            real_mentions.append(&mut maybe_mentions);
+
+            let message_without_mentions = {
+                let mut message_text = message.message_text.clone();
+                for real_mention in real_mentions {
+                    message_text = message_text.replace(real_mention.handle, &message_text);
+                }
+                message_text
+            };
+
+            let text_stats = TextStats::new(&message_without_mentions);
+            if text_stats.should_delete() {
                 self.delete_message_with_token_refresh(message, server_message).await;
             }
         }
@@ -56,7 +83,6 @@ impl<'a> RipBozo<'a> {
 
                 if twitch::helpers::is_unauthorized_error(&error) {
                     eprintln!("Refreshing token");
-
                     self.token.refresh_token(self.helix_client.get_client()).await.unwrap();
                     self.delete_message_with_token_refresh(message, server_message).await
                 }
@@ -67,6 +93,72 @@ impl<'a> RipBozo<'a> {
 
 lazy_static! {
     static ref EMOJI_REGEX: Regex = Regex::new(r"\p{Emoji}").unwrap();
+    static ref MENTION_REGEX: Regex = Regex::new(r"(@(\w+))").unwrap();
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Mention<'a> {
+    handle: &'a str,
+    login: &'a str,
+}
+
+impl<'a> Mention<'a> {
+    pub fn from(captures: Captures<'a>) -> Option<Self> {
+        match (captures.get(1), captures.get(2)) {
+            (Some(handle), Some(login)) => Some(Self {
+                handle: handle.as_str(),
+                login: login.as_str(),
+            }),
+            _ => None,
+        }
+    }
+
+    pub async fn is_real(
+        &self,
+        helix_client: &HelixClient<'_, reqwest::Client>,
+        token: &UserToken,
+    ) -> Result<bool, ClientRequestError<reqwest::Error>> {
+        match helix_client.get_user_from_login(self.login, token).await {
+            Ok(Some(_)) => Ok(true),
+            Ok(None) => Ok(false),
+            Err(e) => Err(e),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Mentions<'a>(Vec<Mention<'a>>);
+
+impl<'a> Mentions<'a> {
+    pub fn new(text: &'a str) -> Self {
+        Self(MENTION_REGEX.captures_iter(text).filter_map(Mention::from).collect())
+    }
+
+    pub async fn real_ones(
+        &'a self,
+        helix_client: &HelixClient<'_, reqwest::Client>,
+        token: &UserToken,
+    ) -> (
+        Vec<&Mention<'_>>,
+        Vec<(&Mention<'_>, ClientRequestError<reqwest::Error>)>,
+    ) {
+        let mut real_ones = vec![];
+        let mut errors = vec![];
+
+        for mention in self.as_inner() {
+            match mention.is_real(helix_client, token).await {
+                Ok(true) => real_ones.push(mention),
+                Ok(false) => (),
+                Err(e) => errors.push((mention, e)),
+            }
+        }
+
+        (real_ones, errors)
+    }
+
+    pub fn as_inner(&self) -> &[Mention<'_>] {
+        self.0.as_slice()
+    }
 }
 
 #[allow(dead_code)]
@@ -80,7 +172,9 @@ struct TextStats<'a> {
 }
 
 impl<'a> TextStats<'a> {
-    pub fn build(text: &'a str) -> Self {
+    const NOT_ASCII_WHITELIST: [&'static str; 4] = ["\u{e0000}", "…", "？", "о"];
+
+    pub fn new(text: &'a str) -> Self {
         let graphemes: Vec<&str> = UnicodeSegmentation::graphemes(text, true).collect();
 
         let mut ascii_alnum = vec![];
@@ -116,7 +210,19 @@ impl<'a> TextStats<'a> {
         }
     }
 
-    pub fn only_emojis(&self) -> Option<usize> {
+    pub fn should_delete(&self) -> bool {
+        if let Some(emojis_count) = self.only_emojis() {
+            return emojis_count > 24;
+        }
+
+        if self.not_ascii_perc(&Self::NOT_ASCII_WHITELIST) > 45.0 {
+            return true;
+        }
+
+        false
+    }
+
+    fn only_emojis(&self) -> Option<usize> {
         let emojis_count = self.emojis.len();
         if emojis_count == self.ascii_alnum.len() + self.ascii_symbols.len() + self.not_ascii.len() + self.emojis.len()
         {
@@ -125,7 +231,7 @@ impl<'a> TextStats<'a> {
         None
     }
 
-    pub fn not_ascii_perc(&self, not_ascii_whitelist: &[&str]) -> f64 {
+    fn not_ascii_perc(&self, not_ascii_whitelist: &[&str]) -> f64 {
         let not_ascii_count = self
             .not_ascii
             .iter()
@@ -136,70 +242,120 @@ impl<'a> TextStats<'a> {
     }
 }
 
-const NOT_ASCII_WHITELIST: [&str; 4] = ["\u{e0000}", "…", "？", "о"];
-
-fn should_delete(message_text: &str) -> bool {
-    let text_stats = TextStats::build(message_text);
-
-    if let Some(emojis_count) = text_stats.only_emojis() {
-        return emojis_count > 24;
-    }
-
-    if text_stats.not_ascii_perc(&NOT_ASCII_WHITELIST) > 45.0 {
-        return true;
-    }
-
-    false
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_should_delete() {
-        assert!(!should_delete(r#""#));
-        assert!(!should_delete(r#" "#));
-        assert!(!should_delete(r#"D:"#));
-        assert!(!should_delete(r#":D"#));
-        assert!(!should_delete(r#":)"#));
-        assert!(!should_delete(r#":) :) :) :) :) :) :) :) :)"#));
-        assert!(!should_delete(r#"hola"#));
-        assert!(!should_delete(r#"..."#));
-        assert!(!should_delete(r#"......"#));
-        assert!(!should_delete(r#"........."#));
-        assert!(!should_delete(r#"!!!"#));
-        assert!(!should_delete(r#"!!!!!!"#));
-        assert!(!should_delete(r#"!!!!!!!!!"#));
-        assert!(!should_delete(r#"???"#));
-        assert!(!should_delete(r#"??????"#));
-        assert!(!should_delete(r#"?????????"#));
-        assert!(!should_delete(r#"WTF!?!?!?!??!?!?!???!?!?!?"#));
-        assert!(!should_delete(r#"@@"#));
-        assert!(!should_delete(r#"…"#));
-        assert!(!should_delete(r#"…o"#));
-        assert!(!should_delete(
-            r#""El presidente del Congreso, que aún no ha manifestado si se adherirá o no a la iniciativa del ministro de Industria, no quiso dar trascendencia al asunto, «que no tiene más valor que el de una anécdota y el de una corbata regalada»."#
-        ));
-        assert!(!should_delete(r#"🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲"#));
-        assert!(!should_delete(
-            r#"🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲"#
-        ));
-        assert!(!should_delete(r#"WHAT?!!! 🔥🔥🔥🗣️💯💯💯"#));
-        assert!(!should_delete("🐝 \u{e0000}"));
-        assert!(!should_delete("A \u{e0000}"));
-        assert!(!should_delete("？"));
-        assert!(!should_delete("foo ？"));
-        assert!(!should_delete("о"));
-        assert!(!should_delete("о7"));
-        assert!(should_delete(r#"…ö"#));
-        assert!(should_delete(
-            r#"🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲"#
-        ));
-        assert!(should_delete(
-            r#"🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲"#
-        ));
-        assert!(should_delete(
+    fn test_mentions_new_builds_the_expected_mentions() {
+        assert!(Mentions::new(r#""#).as_inner().is_empty());
+        assert_eq!(
+            Mentions::new(r#"@Fusillicode"#).as_inner(),
+            &[Mention {
+                handle: "@Fusillicode",
+                login: "Fusillicode"
+            }]
+        );
+        assert_eq!(
+            Mentions::new(r#"@Fusilli code"#).as_inner(),
+            &[Mention {
+                handle: "@Fusilli",
+                login: "Fusilli"
+            }]
+        );
+        assert_eq!(
+            Mentions::new(r#"@Fusilli @code"#).as_inner(),
+            &[
+                Mention {
+                    handle: "@Fusilli",
+                    login: "Fusilli"
+                },
+                Mention {
+                    handle: "@code",
+                    login: "code"
+                }
+            ]
+        );
+        assert_eq!(
+            Mentions::new(r#"@Fusilli@code"#).as_inner(),
+            &[
+                Mention {
+                    handle: "@Fusilli",
+                    login: "Fusilli"
+                },
+                Mention {
+                    handle: "@code",
+                    login: "code"
+                }
+            ]
+        );
+        assert_eq!(
+            Mentions::new(r#"@Fusilli, code"#).as_inner(),
+            &[Mention {
+                handle: "@Fusilli",
+                login: "Fusilli"
+            }]
+        );
+        assert_eq!(
+            Mentions::new(r#"Fusilli, @code"#).as_inner(),
+            &[Mention {
+                handle: "@code",
+                login: "code"
+            }]
+        );
+    }
+
+    #[test]
+    fn test_text_stats_should_delete_works_as_expected() {
+        assert!(!TextStats::new(r#""#).should_delete());
+        assert!(!TextStats::new(r#" "#).should_delete());
+        assert!(!TextStats::new(r#"D:"#).should_delete());
+        assert!(!TextStats::new(r#":D"#).should_delete());
+        assert!(!TextStats::new(r#":)"#).should_delete());
+        assert!(!TextStats::new(r#":) :) :) :) :) :) :) :) :)"#).should_delete());
+        assert!(!TextStats::new(r#"hola"#).should_delete());
+        assert!(!TextStats::new(r#"..."#).should_delete());
+        assert!(!TextStats::new(r#"......"#).should_delete());
+        assert!(!TextStats::new(r#"........."#).should_delete());
+        assert!(!TextStats::new(r#"!!!"#).should_delete());
+        assert!(!TextStats::new(r#"!!!!!!"#).should_delete());
+        assert!(!TextStats::new(r#"!!!!!!!!!"#).should_delete());
+        assert!(!TextStats::new(r#"???"#).should_delete());
+        assert!(!TextStats::new(r#"??????"#).should_delete());
+        assert!(!TextStats::new(r#"?????????"#).should_delete());
+        assert!(!TextStats::new(r#"WTF!?!?!?!??!?!?!???!?!?!?"#).should_delete());
+        assert!(!TextStats::new(r#"@@"#).should_delete());
+        assert!(!TextStats::new(r#"…"#).should_delete());
+        assert!(!TextStats::new(r#"…o"#).should_delete());
+        assert!(!TextStats::new(
+            r#""El presidente del Congreso, que aún no ha manifestado si se adherirá o no a la iniciativa del
+        ministro de Industria, no quiso dar trascendencia al asunto, «que no tiene más valor que el de una anécdota y
+        el de una corbata regalada»."#
+        )
+        .should_delete());
+        assert!(!TextStats::new(r#"🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲"#).should_delete());
+        assert!(
+            !TextStats::new(r#"🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲"#)
+                .should_delete()
+        );
+        assert!(!TextStats::new(r#"WHAT?!!! 🔥🔥🔥🗣️💯💯💯"#).should_delete());
+        assert!(!TextStats::new("🐝 \u{e0000}").should_delete());
+        assert!(!TextStats::new("A \u{e0000}").should_delete());
+        assert!(!TextStats::new("？").should_delete());
+        assert!(!TextStats::new("foo ？").should_delete());
+        assert!(!TextStats::new("о").should_delete());
+        assert!(!TextStats::new("о7").should_delete());
+        assert!(TextStats::new(r#"…ö"#).should_delete());
+        assert!(
+            TextStats::new(r#"🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲"#)
+                .should_delete()
+        );
+        assert!(TextStats::new(
+            r#"🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲
+        🥲 🥲 🥲 🥲 🥲 🥲"#
+        )
+        .should_delete());
+        assert!(TextStats::new(
             r#"
                 ✅✅✅✅✅✅✅✅✅✅✅✅
                 ✅✅✅✅✅✅✅✅✅✅✅✅
@@ -211,8 +367,9 @@ mod tests {
                 ✅✅✅⬛⬛✅✅⬛⬛✅✅✅
                 ✅✅✅✅✅✅✅✅✅✅✅✅
             "#
-        ));
-        assert!(should_delete(
+        )
+        .should_delete());
+        assert!(TextStats::new(
             r#"
                 ⢿⣿⣿⣿⣭⠹⠛⠛⠛⢿⣿⣿⣿⣿⡿⣿⠷⠶⠿⢻⣿⣛⣦⣙⠻⣿
                 ⣿⣿⢿⣿⠏⠀⠀⡀⠀⠈⣿⢛⣽⣜⠯⣽⠀⠀⠀⠀⠙⢿⣷⣻⡀⢿
@@ -225,14 +382,15 @@ mod tests {
                 ⣦⡑⠛⣟⢿⡿⣿⣷⣝⢧⡀⠀⠀⣶⣸⡇⣿⢸⣧⠀⠀⠀⠀⢸⡿⡆
                 ⣿⣿⣷⣮⣭⣍⡛⠻⢿⣷⠿⣶⣶⣬⣬⣁⣉⣀⣀⣁⡤⢴⣺⣾⣽⡇
             "#
-        ));
-        assert!(should_delete(
+        )
+        .should_delete());
+        assert!(TextStats::new(
             r#"⢿⣿⣿⣿⣭⠹⠛⠛⠛⢿⣿⣿⣿⣿⡿⣿⠷⠶⠿⢻⣿⣛⣦⣙⠻⣿ ⣿⣿⢿⣿⠏⠀⠀⡀⠀⠈⣿⢛⣽⣜⠯⣽⠀⠀⠀⠀⠙⢿⣷⣻⡀⢿ ⠐⠛⢿⣾⣖⣤⡀⠀⢀⡰⠿⢷⣶⣿⡇⠻⣖⣒⣒⣶⣿⣿⡟⢙⣶⣮ ⣤⠀⠀⠛⠻⠗⠿⠿⣯⡆⣿⣛⣿⡿⠿⠮⡶⠼⠟⠙⠊⠁⠀⠸⢣⣿ ⣿⣷⡀⠀⠀⠀⠀⠠⠭⣍⡉⢩⣥⡤⠥⣤⡶⣒⠀⠀⠀⠀⠀⢰⣿⣿ ⣿⣿⡽⡄⠀⠀⠀⢿⣿⣆⣿⣧⢡⣾⣿⡇⣾⣿⡇⠀⠀⠀⠀⣿⡇⠃ ⣿⣿⣷⣻⣆⢄⠀⠈⠉⠉⠛⠛⠘⠛⠛⠛⠙⠛⠁⠀⠀⠀⠀⣿⡇⢸ ⢞⣿⣿⣷⣝⣷⣝⠦⡀⠀⠀⠀⠀⠀⠀⠀⡀⢀⠀⠀⠀⠀⠀⠛⣿⠈ ⣦⡑⠛⣟⢿⡿⣿⣷⣝⢧⡀⠀⠀⣶⣸⡇⣿⢸⣧⠀⠀⠀⠀⢸⡿⡆ ⣿⣿⣷⣮⣭⣍⡛⠻⢿⣷⠿⣶⣶⣬⣬⣁⣉⣀⣀⣁⡤⢴⣺⣾⣽⡇"#
-        ));
-        assert!(should_delete(
+        ).should_delete());
+        assert!(TextStats::new(
             r#"⢿⣿⣿⣿⣭⠹⠛⠛⠛⢿⣿⣿⣿⣿⡿⣿⠷⠶⠿⢻⣿⣛⣦⣙⠻⣿⣿⣿⢿⣿⠏⠀⠀⡀⠀⠈⣿⢛⣽⣜⠯⣽⠀⠀⠀⠀⠙⢿⣷⣻⡀⢿⠐⠛⢿⣾⣖⣤⡀⠀⢀⡰⠿⢷⣶⣿⡇⠻⣖⣒⣒⣶⣿⣿⡟⢙⣶⣮⣤⠀⠀⠛⠻⠗⠿⠿⣯⡆⣿⣛⣿⡿⠿⠮⡶⠼⠟⠙⠊⠁⠀⠸⢣⣿⣿⣷⡀⠀⠀⠀⠀⠠⠭⣍⡉⢩⣥⡤⠥⣤⡶⣒⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⡽⡄⠀⠀⠀⢿⣿⣆⣿⣧⢡⣾⣿⡇⣾⣿⡇⠀⠀⠀⠀⣿⡇⠃⣿⣿⣷⣻⣆⢄⠀⠈⠉⠉⠛⠛⠘⠛⠛⠛⠙⠛⠁⠀⠀⠀⠀⣿⡇⢸⢞⣿⣿⣷⣝⣷⣝⠦⡀⠀⠀⠀⠀⠀⠀⠀⡀⢀⠀⠀⠀⠀⠀⠛⣿⠈⣦⡑⠛⣟⢿⡿⣿⣷⣝⢧⡀⠀⠀⣶⣸⡇⣿⢸⣧⠀⠀⠀⠀⢸⡿⡆⣿⣿⣷⣮⣭⣍⡛⠻⢿⣷⠿⣶⣶⣬⣬⣁⣉⣀⣀⣁⡤⢴⣺⣾⣽⡇"#
-        ));
-        assert!(should_delete(
+        ).should_delete());
+        assert!(TextStats::new(
             r"
                 ▬▬▬▬▬.◙.▬▬▬▬▬
                 ▂▄▄▓▄▄▂
@@ -249,8 +407,9 @@ mod tests {
             /▌  ╬═╬
             / \
             "
-        ));
-        assert!(should_delete(
+        )
+        .should_delete());
+        assert!(TextStats::new(
             r#"
                 ———————————No stiches?———————————
                 ⠀⣞⢽⢪⢣⢣⢣⢫⡺⡵⣝⡮⣗⢷⢽⢽⢽⣮⡷⡽⣜⣜⢮⢺⣜⢷⢽⢝⡽⣝
@@ -268,6 +427,7 @@ mod tests {
                 ⠀⠀⠀⠀⠁⠇⠡⠩⡫⢿⣝⡻⡮⣒⢽⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
                 ————————————————————————————-
             "#
-        ));
+        )
+        .should_delete());
     }
 }
