@@ -3,7 +3,6 @@ use lazy_static::lazy_static;
 use regex::Captures;
 use regex::Regex;
 use sqlx::SqlitePool;
-use twitch_api::helix::ClientRequestError;
 use twitch_api::twitch_oauth2::TwitchToken;
 use twitch_api::twitch_oauth2::UserToken;
 use twitch_api::HelixClient;
@@ -41,20 +40,12 @@ impl<'a> RipBozo<'a> {
             }
 
             let mentions = Mentions::new(&message.message_text);
-            let (mut real_mentions, errors) = mentions.real_ones(&self.helix_client, &self.token).await;
-            let mut maybe_mentions = errors.into_iter().fold(vec![], |mut acc, (mention, error)| {
-                eprintln!(
-                    "Cannot determine if mention {:?} is real due to error {:?}",
-                    mention, error
-                );
-                acc.push(mention);
-                acc
-            });
-            real_mentions.append(&mut maybe_mentions);
-
-            let message_without_mentions = real_mentions.iter().fold(message.message_text.clone(), |acc, mention| {
-                acc.replace(mention.handle, "")
-            });
+            let message_without_mentions = mentions
+                .as_inner()
+                .iter()
+                .fold(message.message_text.clone(), |acc, mention| {
+                    acc.replace(mention.handle, "")
+                });
 
             let text_stats = TextStats::new(&message_without_mentions);
             if text_stats.should_delete() {
@@ -108,18 +99,6 @@ impl<'a> Mention<'a> {
             _ => None,
         }
     }
-
-    pub async fn is_real(
-        &self,
-        helix_client: &HelixClient<'_, reqwest::Client>,
-        token: &UserToken,
-    ) -> Result<bool, ClientRequestError<reqwest::Error>> {
-        match helix_client.get_user_from_login(self.login, token).await {
-            Ok(Some(_)) => Ok(true),
-            Ok(None) => Ok(false),
-            Err(e) => Err(e),
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -128,28 +107,6 @@ pub struct Mentions<'a>(Vec<Mention<'a>>);
 impl<'a> Mentions<'a> {
     pub fn new(text: &'a str) -> Self {
         Self(MENTION_REGEX.captures_iter(text).filter_map(Mention::from).collect())
-    }
-
-    pub async fn real_ones(
-        &'a self,
-        helix_client: &HelixClient<'_, reqwest::Client>,
-        token: &UserToken,
-    ) -> (
-        Vec<&Mention<'_>>,
-        Vec<(&Mention<'_>, ClientRequestError<reqwest::Error>)>,
-    ) {
-        let mut real_ones = vec![];
-        let mut errors = vec![];
-
-        for mention in self.as_inner() {
-            match mention.is_real(helix_client, token).await {
-                Ok(true) => real_ones.push(mention),
-                Ok(false) => (),
-                Err(e) => errors.push((mention, e)),
-            }
-        }
-
-        (real_ones, errors)
     }
 
     pub fn as_inner(&self) -> &[Mention<'_>] {
