@@ -2,11 +2,10 @@ use fake::Dummy;
 use serde::Deserialize;
 use serde::Serialize;
 
-pub mod champions;
+pub mod champion;
 
-pub const DDRAGON_API: &str = "https://ddragon.leagueoflegends.com/cdn/13.8.1/data/en_US";
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash, Dummy)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash, Dummy, sqlx::Type)]
+#[sqlx(transparent)]
 pub struct ChampionKey(String);
 
 impl From<String> for ChampionKey {

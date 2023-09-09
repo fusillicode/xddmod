@@ -78,6 +78,16 @@
     },
     "query": "\n                select\n                    id,\n                    handler as \"handler: Handler\",\n                    pattern,\n                    case_insensitive,\n                    template,\n                    channel,\n                    enabled,\n                    created_by,\n                    additional_inputs as \"additional_inputs: Json<serde_json::Value>\",\n                    created_at as \"created_at!: DateTime<Utc>\",\n                    updated_at as \"updated_at!: DateTime<Utc>\"\n                from replies\n                where enabled = 1 and (channel is null or channel = $1) and (handler is null or handler = $2)\n                order by id asc\n            "
   },
+  "31f71c292ccba7c0b7cb3d8938697558b578aab8f7851ed95f0a3a642fbb54da": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 11
+      }
+    },
+    "query": "\n                insert into champions (\n                    version,\n                    id,\n                    key,\n                    name,\n                    title,\n                    blurb,\n                    info,\n                    image,\n                    tags,\n                    partype,\n                    stats\n                )\n                values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\n            "
+  },
   "569f3b015ae09dcb7f26a1f77ee0414fb03ea97ad337b828b023bd1404935cb5": {
     "describe": {
       "columns": [],
@@ -88,17 +98,7 @@
     },
     "query": "delete from replies where created_by = $1"
   },
-  "7aceb335e2c4f1a594c21110d1e0dabd7fd60565940e51b102e9c49c4f58560e": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Right": 17
-      }
-    },
-    "query": "\n            insert into replies (handler, pattern, template, channel, enabled, additional_inputs, created_by) values\n            (\"Npc\", \"^!twitter$\", $3, $2, 1, null, $1),\n            (\"Npc\", \"^!(?:youtube|yt)$\", $4, $2, 1, null, $1),\n            (\"Npc\", \"^!clips$\", $5, $2, 1, null, $1),\n            (\"Npc\", \"^!vod(?:s)?(?:-)?(?:channel)?(?:s)?$\", $6, $2, 1, null, $1),\n            (\"Npc\", \"^!reddit$\", \"reddit.com/r/PedroPeepos\", $2, 0, null, $1),\n            (\"Npc\", \"^!discord$\", $7, $2, 0, null, $1),\n            (\"Npc\", \"^!instagram$\", $8, $2, 1, null, $1),\n            (\"Npc\", \"^!tiktok$\", $9, $2, 1, null, $1),\n            (\"Npc\", \"^!social(?:s)?$\", $10, $2, 1, null, $1),\n            (\"Npc\", $11, \"No planned streams till LPL bangers (6th of June). MAYBE some variety before that Prayge - Missed/wanna re-watch some MSI games? » !past-games - Stream updates » !twitter\", $2, 1, null, $1),\n            (\"Npc\", $12, \"Caedrel will co-stream LPL from 6th of June & be back casting LEC Summer split from 17th of June - Games schedule » lolesports.com/schedule?leagues=lec,lpl\", $2, 1, null, $1),\n            (\"Npc\", \"^!end(?:ing)?(?:-)?song$\", \"okaywill - Chicken Dinner: youtube.com/watch?v=B_rAI7zaVZU\", $2, 1, null, $1),\n            (\"Npc\", \"^!emote(?:s)?$\", \"To see emotes install 7TV 7tv.app. These are Caedrel's emotes: 7tv.app/users/61e2b8461f8f9d5cf63321a1\", $2, 1, null, $1),\n            (\"Npc\", \"^!(?:prime(?:(?:-)?sub(?:s)?)?|sub(?:s(?:cribe)?)?)$\", \"Sub to Caedrel's & use your Twitch Prime » twitch.tv/subs/caedrel\", $2, 1, null, $1),\n            (\"Npc\", \"^!ad(?:s)?(?:-)?block(?:er(?:s)?)?$\", \"Sippin twitch.tv/subs/caedrel\", $2, 1, null, $1),\n            (\"Npc\", \"^!delay$\", \"Stream's currently without delay ok\", $2, 1, null, $1),\n            (\"Npc\", \"^!(?:playlist(?:s)?|songs|spotify)$\", \"These are the playlists that Caedrel usually listen to on stream sptfy.com/NbBZ sptfy.com/NbC1\", $2, 1, null, $1),\n            (\"Npc\", \"^(?:!song(?:(:?-)?name)?|!listen(?:ing)?|!music|song(:?\\s+name)?\\s*\\?|)$\", \"Sorry don't know the title of the current song Sadge BUT it should be in one of these playlists sptfy.com/NbBZ sptfy.com/NbC1. Stream ending song » !end-song\", $2, 1, null, $1),\n            (\"Npc\", $13, \"Caedrel's main chair » noblechairs.com/en-us/icon-series/gaming-chair-pu-leather?attribute%5Bcolor%5D=White%20/%20Black\", $2, 1, null, $1),\n            (\"Npc\", \"^!time$\", \"It's {{ 'Europe/London'|now|format_date_time('%I:%M %p') }} in Caedrel's timezone (!where)\", $2, 1, null, $1),\n            (\"Npc\", \"^!(?:where|location)$\", \"Caedrel is currently in UK (not in London) ok\", $2, 1, null, $1),\n            (\"Npc\", \"^!track(?:ing)?(?:-)?(?:the)?(?:-)?(?:p|b)ros$\", \"Track the pros » trackdiff.com/leaderboard/msi & trackingthepros.com/bootcamp\", $2, 1, null, $1),\n            (\"Npc\", \"^!champ(?:ion)?(?:s)?(?:-)?q(?:ueue)?$\", \"EMEA champ queue leaderboard » emeacq.lolesports.com/en-us\", $2, 1, null, $1),\n            (\"Npc\", \"^!(?:subathon|scamathon)$\", \"Subathon MAYBE before LEC Summer split Prayge\", $2, 1, null, $1),\n            (\"Npc\", \"^!msi$\", \"MSI ended Sunday 21th of May with BLG vs JDG. Check past games » !past-games\", $2, 1, null, $1),\n            (\"Npc\", \"^!(?:past|covered)(?:-)?games$\", \"ALL past MSI games covered by Caedrel » youtube.com/@Caedrel/videos (uploads can be delayed due to DMCA)\", $2, 1, null, $1),\n            (\"Npc\", \"^!(?:msi(?:-)?)?prediction(?:s)?$\", \"Caedrel vs chat MSI predictions » \", $2, 0, null, $1),\n            (\"Npc\", \"^!pen$\", \"epicpen.com is the app Caedrel uses to draw on screen\", $2, 1, null, $1),\n            (\"Gamba\", \"^!gamba$\", $14, $2, 1, null, $1),\n            (\"Gg\", \"^!last(?:-)?game$\", $15, null, 1, $17, $1),\n            (\"Sniffa\", \"^!in(?:-)?game$\", $16, null, 1, $17, $1);\n        "
-  },
-  "96c0cf26803378579cd9705cb51bad1cc00594a10ed0dcf33c2db9003ffcdc5a": {
+  "574397ee3ff451572ef1516cd11e2c00e03fa74f73ff91cca30c980640b6910e": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -106,6 +106,104 @@
         "Right": 1
       }
     },
-    "query": "\n            insert into replies (handler, pattern, template, enabled, created_by) values\n            (\"Npc\", \"^!patch(?:es)?$\", \"MSI is on 13.8 ok\", 1, $1);\n        "
+    "query": "\n            insert into replies (handler, pattern, template, enabled, created_by) values\n            (\"Npc\", \"^!patch(?:es)?$\", \"LCK on 13.14, LPL & LEC on 13.15 ok\", 1, $1);\n        "
+  },
+  "7de87eeb456b7d4cb2310391d4abb365733c86e914e737b7732c52aa5c2b1bd0": {
+    "describe": {
+      "columns": [
+        {
+          "name": "version",
+          "ordinal": 0,
+          "type_info": "Text"
+        },
+        {
+          "name": "id",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "key!: ChampionKey",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "name",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "title",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "blurb",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "info!: Json<Info>",
+          "ordinal": 6,
+          "type_info": "Null"
+        },
+        {
+          "name": "image!: Json<Image>",
+          "ordinal": 7,
+          "type_info": "Null"
+        },
+        {
+          "name": "tags!: Json<Vec<Tag>>",
+          "ordinal": 8,
+          "type_info": "Null"
+        },
+        {
+          "name": "partype",
+          "ordinal": 9,
+          "type_info": "Text"
+        },
+        {
+          "name": "stats!: Json<HashMap<String, f64>>",
+          "ordinal": 10,
+          "type_info": "Null"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "\n                select\n                    version,\n                    id,\n                    key as \"key!: ChampionKey\",\n                    name,\n                    title,\n                    blurb,\n                    info as \"info!: Json<Info>\",\n                    image as \"image!: Json<Image>\", \n                    tags as \"tags!: Json<Vec<Tag>>\", \n                    partype, \n                    stats as \"stats!: Json<HashMap<String, f64>>\" \n                from champions \n                where key = $1\n            "
+  },
+  "b8aac30ce64b22bff8b5b81359b7eed635384cdb662b7a4c136a00cc5c6cf642": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 20
+      }
+    },
+    "query": "\n            insert into replies (handler, pattern, template, channel, enabled, additional_inputs, created_by) values\n            (\"Npc\", \"^!(?:twitter|tw|x)$\", $3, $2, 1, null, $1),\n            (\"Npc\", \"^!(?:youtube|yt)$\", $4, $2, 1, null, $1),\n            (\"Npc\", \"^!clips$\", $5, $2, 1, null, $1),\n            (\"Npc\", \"^!vod(?:s)?(?:-)?(?:channel)?(?:s)?$\", $6, $2, 1, null, $1),\n            (\"Npc\", \"^!variety$\", $19, $2, 1, null, $1),\n            (\"Npc\", \"^!reddit$\", \"reddit.com/r/PedroPeepos\", $2, 0, null, $1),\n            (\"Npc\", \"^!discord$\", $7, $2, 0, null, $1),\n            (\"Npc\", \"^!instagram$\", $8, $2, 1, null, $1),\n            (\"Npc\", \"^!tiktok$\", $9, $2, 1, null, $1),\n            (\"Npc\", \"^!threads$\", $18, $2, 1, null, $1),\n            (\"Npc\", \"^!social(?:s)?$\", $10, $2, 1, null, $1),\n            (\"Npc\", $11, \"No stream till Tue 12th, Caedrel will be in Montpellier for LEC finals (!lec) x.com/caedrelupdates/status/1700062606478717105 - More stream updates » !x\", $2, 1, null, $1),\n            (\"Npc\", $12, \"Caedrel will be in Montpellier casting FNC vs MAD Sat 9th (18:00 CEST) & G2 vs ? Sun 10th (18:00 CEST) - Games schedule » lolesports.com/schedule?leagues=lec\", $2, 1, null, $1),\n            (\"Npc\", \"^!end(?:ing)?(?:-)?song$\", \"okaywill - Chicken Dinner: youtube.com/watch?v=B_rAI7zaVZU\", $2, 1, null, $1),\n            (\"Npc\", \"^!emote(?:s)?$\", \"To see emotes install 7TV 7tv.app. These are Caedrel's emotes: 7tv.app/users/61e2b8461f8f9d5cf63321a1\", $2, 1, null, $1),\n            (\"Npc\", \"^!(?:prime(?:(?:-)?sub(?:s)?)?|sub(?:s(?:cribe)?)?)$\", \"Sub to Caedrel's & use your Twitch Prime » twitch.tv/subs/caedrel\", $2, 1, null, $1),\n            (\"Npc\", \"^!ad(?:s)?(?:-)?block(?:er(?:s)?)?$\", \"Sippin twitch.tv/subs/caedrel\", $2, 1, null, $1),\n            (\"Npc\", \"^!(?:playlist(?:s)?|songs|spotify)$\", \"These are the playlists that Caedrel usually listen to on stream from recent to oldest sptfy.com/OKIV sptfy.com/NbC1 sptfy.com/NbBZ\", $2, 1, null, $1),\n            (\"Npc\", \"^(?:!song(?:(:?-)?name)?|!listen(?:ing)?|!music|song(:?\\s+name)?\\s*\\?|)$\", \"Sorry don't know the title of the current song Sadge BUT it should be in one of these playlists sptfy.com/OKIV sptfy.com/NbC1 sptfy.com/NbBZ. Stream ending song » !end-song\", $2, 1, null, $1),\n            (\"Npc\", $13, \"Caedrel's main chair » noblechairs.com/en-us/icon-series/gaming-chair-pu-leather?attribute%5Bcolor%5D=White%20/%20Black\", $2, 1, null, $1),\n            (\"Npc\", \"^!time$\", \"It's {{ 'Europe/Berlin'|now|format_date_time('%I:%M %p') }} in Caedrel's timezone (!where)\", null, 1, null, $1),\n            (\"Npc\", \"^!(?:where|location|place)$\", \"Caedrel is currently in Berlin ok\", $2, 1, null, $1),\n            (\"Npc\", \"^!track(?:ing)?(?:-)?(?:the)?(?:-)?(?:p|b)ros$\", \"Track the pros » trackdiff.com/leaderboard/msi & trackingthepros.com/bootcamp\", $2, 1, null, $1),\n            (\"Npc\", \"^!champ(?:ion)?(?:s)?(?:-)?q(?:ueue)?$\", \"EMEA champ queue leaderboard » emeacq.lolesports.com/en-us\", $2, 1, null, $1),\n            (\"Npc\", \"^!(?:subathon|scamathon)$\", \"Subathon MAYBE before LEC Summer split Prayge\", $2, 1, null, $1),\n            (\"Npc\", \"^!msi$\", \"MSI ended Sunday 21th of May with BLG vs JDG. Check past games » !past-games\", $2, 1, null, $1),\n            (\"Npc\", \"^!(?:past|covered)(?:-)?games$\", \"ALL past MSI games covered by Caedrel » youtube.com/@Caedrel/videos (uploads can be delayed/cancelled due to DMCA)\", $2, 1, null, $1),\n            (\"Npc\", \"^!(?:msi(?:-)?)?prediction(?:s)?$\", \"Caedrel vs chat MSI predictions » \", $2, 0, null, $1),\n            (\"Npc\", \"^!pen$\", \"epicpen.com is the app Caedrel uses to draw on screen\", $2, 1, null, $1),\n            (\"Npc\", \"^!(?:reddit(?:-)?place|r(:?-)?place)$\", \"zaza template & how to use it docs.google.com/document/d/1fh40yWYfLuqyeON_7l8y-B5mLJh6WJlZS_dhzbggLzk\", $2, 1, null, $1),\n            (\"Npc\", \"^!live(?:-)?view(?:ing)?$\", \"liveviewsync.com/Caedrel select 'LCK (TTV)' in 'LIVE GAME OR VIDEO' selectbox - Riot didn't gave permission to co-stream LCK regionals\", $2, 1, null, $1),\n            (\"Gamba\", \"^!gamba$\", $14, $2, 1, null, $1),\n            (\"Gg\", \"^!last(?:-)?game$\", $15, null, 1, $17, $1),\n            (\"Sniffa\", \"^!(?:in|current|live)(?:-)?game$\", $16, null, 1, $17, $1),\n            (\"TheGrind\", \"^!(rank|lp)$\", $20, null, 1, $17, $1);\n        "
+  },
+  "e2481b47d914169889718d439d7b9cd74e5b0200591dbcf6bdbb759237a13597": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 0
+      }
+    },
+    "query": "delete from champions"
   }
 }

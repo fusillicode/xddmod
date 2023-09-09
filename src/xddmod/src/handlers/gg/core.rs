@@ -7,8 +7,7 @@ use sqlx::SqlitePool;
 use twitch_irc::message::PrivmsgMessage;
 use twitch_irc::message::ServerMessage;
 
-use crate::apis::ddragon;
-use crate::apis::ddragon::champions::Champion;
+use crate::apis::ddragon::champion::Champion;
 use crate::apis::op_gg;
 use crate::apis::op_gg::games::Game;
 use crate::apis::op_gg::Region;
@@ -66,7 +65,7 @@ impl<'a> Gg<'a> {
                                     .unwrap()
                             {
                                 let template_inputs = TemplateInputs {
-                                    champion: ddragon::champions::get_champion(game.my_data.champion_key)
+                                    champion: Champion::by_key(game.my_data.champion_key.into(), &self.db_pool)
                                         .await
                                         .unwrap(),
                                     game,

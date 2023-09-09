@@ -13,7 +13,7 @@ async fn main() {
     let app_config = AppConfig::init();
     let channel = std::env::args().nth(1).unwrap();
 
-    let db_pool = SqlitePool::connect(app_config.database_url.as_ref()).await.unwrap();
+    let db_pool = SqlitePool::connect(app_config.db_url.as_ref()).await.unwrap();
 
     let (mut incoming_messages, irc_client, user_token) = auth::authenticate(app_config.clone()).await;
 
