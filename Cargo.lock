@@ -526,25 +526,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dankcontent"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "fake",
- "lazy_static",
- "minijinja",
- "pomsky-macro",
- "rand",
- "regex",
- "serde",
- "serde_json",
- "sqlx",
- "tokio",
- "xddmod",
-]
-
-[[package]]
 name = "darling"
 version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1614,30 +1595,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ac9a59f73473f1b8d852421e59e64809f025994837ef743615c6d0c5b305160"
 
 [[package]]
-name = "pomsky"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6807866ef2d693e9770774e9443d64aa98e4da3de805130b9387d0d05e00f0e"
-dependencies = [
- "pomsky-syntax",
-]
-
-[[package]]
-name = "pomsky-macro"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ec61110bbb75607cd71ca75d2ccfd216658dc4f942ac92ec5a7db2984e3871b"
-dependencies = [
- "pomsky",
-]
-
-[[package]]
-name = "pomsky-syntax"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "034aa21218419dc25ae3aa753bd8080bbe1a4c14f217f4d23cd501c911f7889d"
-
-[[package]]
 name = "ppv-lite86"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2392,8 +2349,8 @@ checksum = "3528ecfd12c466c6f163363caf2d02a71161dd5e1cc6ae7b34207ea2d42d81ed"
 
 [[package]]
 name = "twitch-irc"
-version = "5.0.0"
-source = "git+https://github.com/Retoon/twitch-irc-rs?branch=reply_parent_feature#86b6ec3c95ff6df3e129c2be375878e9ec1521d8"
+version = "5.0.1"
+source = "git+https://github.com/Retoon/twitch-irc-rs?branch=reply_parent_feature#3871d5e0850730b96ef0205de36cfb6116c74996"
 dependencies = [
  "async-trait",
  "bytes",
