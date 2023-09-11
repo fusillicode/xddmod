@@ -11,6 +11,9 @@ use url::Url;
 pub struct AppConfig {
     pub socket_addr: SocketAddr,
     pub server_url: Url,
+    // The env var must be named `DATABASE_URL` to leverage `sqlx` offline mode
+    // https://docs.rs/sqlx/latest/sqlx/macro.query.html#offline-mode-requires-the-offline-feature
+    #[serde(rename = "database_url")]
     pub db_url: Url,
     pub client_id: ClientId,
     pub client_secret: ClientSecret,
