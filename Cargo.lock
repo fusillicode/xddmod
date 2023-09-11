@@ -2349,8 +2349,8 @@ checksum = "3528ecfd12c466c6f163363caf2d02a71161dd5e1cc6ae7b34207ea2d42d81ed"
 
 [[package]]
 name = "twitch-irc"
-version = "5.0.0"
-source = "git+https://github.com/Retoon/twitch-irc-rs?branch=reply_parent_feature#86b6ec3c95ff6df3e129c2be375878e9ec1521d8"
+version = "5.0.1"
+source = "git+https://github.com/Retoon/twitch-irc-rs?branch=reply_parent_feature#3871d5e0850730b96ef0205de36cfb6116c74996"
 dependencies = [
  "async-trait",
  "bytes",
