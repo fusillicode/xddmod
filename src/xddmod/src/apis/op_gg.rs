@@ -8,7 +8,8 @@ pub mod games;
 pub mod spectate;
 pub mod summoners;
 
-pub const OP_GG_API: &str = "https://op.gg/api/v1.0/internal/bypass";
+pub const OP_GG_INTERNAL_API: &str = "https://op.gg/api/v1.0/internal/bypass";
+pub const OP_GG_NEXT_API: &str = "https://op.gg/_next/data/4lhOLzvEROMwUXJXnC8xJ/en_US";
 
 #[derive(Clone, Copy, Debug, Dummy, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]

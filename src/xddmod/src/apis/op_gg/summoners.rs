@@ -8,7 +8,8 @@ use serde::Serialize;
 
 use crate::apis::op_gg::Region;
 use crate::apis::op_gg::TierInfo;
-use crate::apis::op_gg::OP_GG_API;
+use crate::apis::op_gg::OP_GG_INTERNAL_API;
+use crate::apis::op_gg::OP_GG_NEXT_API;
 
 pub async fn get_summoner(region: Region, summoner_name: &str) -> anyhow::Result<Summoner> {
     match &get_summoners(region, summoner_name).await?.data[..] {

@@ -11,7 +11,7 @@ use crate::apis::op_gg::summoners::Summoner;
 use crate::apis::op_gg::Region;
 use crate::apis::op_gg::TeamKey;
 use crate::apis::op_gg::TierInfo;
-use crate::apis::op_gg::OP_GG_API;
+use crate::apis::op_gg::OP_GG_INTERNAL_API;
 
 pub async fn get_last_game(region: Region, summoner_id: &str) -> anyhow::Result<Option<Game>> {
     let games = get_games(region, summoner_id, None, None, Some(1)).await?;
@@ -26,7 +26,10 @@ async fn get_games(
     maybe_to: Option<DateTime<Utc>>,
     maybe_limit: Option<i32>,
 ) -> anyhow::Result<Games> {
-    let mut url = Url::parse(&format!("{}/games/{}/summoners/{}", OP_GG_API, region, summoner_id))?;
+    let mut url = Url::parse(&format!(
+        "{}/games/{}/summoners/{}",
+        OP_GG_INTERNAL_API, region, summoner_id
+    ))?;
 
     fn build_query(maybe_to: Option<DateTime<Utc>>, maybe_limit: Option<i32>) -> String {
         let mut query = "game_type=total".to_owned();
