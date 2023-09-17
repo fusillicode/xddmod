@@ -11,10 +11,10 @@ use crate::apis::ddragon::ChampionKey;
 use crate::apis::op_gg::Region;
 use crate::apis::op_gg::TeamKey;
 use crate::apis::op_gg::TierInfo;
-use crate::apis::op_gg::OP_GG_API;
+use crate::apis::op_gg::OP_GG_INTERNAL_API;
 
 pub async fn get_spectate_status(region: Region, summoner_id: &str) -> anyhow::Result<SpectateStatus> {
-    let url = Url::parse(&format!("{}/spectates/{}/{}", OP_GG_API, region, summoner_id))?;
+    let url = Url::parse(&format!("{}/spectates/{}/{}", OP_GG_INTERNAL_API, region, summoner_id))?;
     let spectate_status = reqwest::get(url.clone()).await?.json().await?;
 
     Ok(spectate_status)
