@@ -24,8 +24,22 @@ pub async fn get_summoner(region: Region, summoner_name: &str) -> anyhow::Result
     }
 }
 
+pub async fn get_summoner_json(region: Region, summoner_name: &str) -> anyhow::Result<SummonerJson> {
+    let url = Url::parse(&format!(
+        "{}/summoners/{}/{}.json",
+        OP_GG_NEXT_API, region, summoner_name
+    ))?;
+
+    Ok(reqwest::get(url)
+        .await?
+        .json::<SummonerJsonResponse>()
+        .await?
+        .page_props
+        .data)
+}
+
 async fn get_summoners(region: Region, summoner_name: &str) -> anyhow::Result<Summoners> {
-    let mut url = Url::parse(&format!("{}/summoners/{}/autocomplete", OP_GG_API, region))?;
+    let mut url = Url::parse(&format!("{}/summoners/{}/autocomplete", OP_GG_INTERNAL_API, region))?;
     url.set_query(Some(&format!("keyword={}", summoner_name)));
 
     Ok(reqwest::get(url).await?.json().await?)
@@ -38,6 +52,13 @@ pub struct Summoners {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
 pub struct Summoner {
+    #[serde(flatten)]
+    pub common: CommonSummoner,
+    pub solo_tier_info: Option<TierInfo>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
+pub struct CommonSummoner {
     pub id: i64,
     pub summoner_id: String,
     pub acct_id: String,
