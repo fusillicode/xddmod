@@ -60,9 +60,10 @@ impl<'a> Sniffa<'a> {
                             .await
                             .unwrap();
 
-                            let spectate_status = get_spectate_status(additional_inputs.region, &summoner.summoner_id)
-                                .await
-                                .unwrap();
+                            let spectate_status =
+                                get_spectate_status(additional_inputs.region, &summoner.common.summoner_id)
+                                    .await
+                                    .unwrap();
 
                             let template_inputs = TemplateInputs {
                                 summoner,

@@ -47,5 +47,29 @@ pub struct Summoner {
     pub profile_image_url: String,
     pub level: i64,
     pub updated_at: DateTime<Utc>,
-    pub solo_tier_info: Option<TierInfo>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
+pub struct SummonerJson {
+    #[serde(flatten)]
+    pub common: CommonSummoner,
+    pub lp_histories: Vec<LpHistory>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
+pub struct LpHistory {
+    pub elo_point: i64,
+    pub tier_info: TierInfo,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
+struct SummonerJsonResponse {
+    #[serde(rename(deserialize = "pageProps"))]
+    page_props: PageProps,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Dummy)]
+struct PageProps {
+    data: SummonerJson,
 }

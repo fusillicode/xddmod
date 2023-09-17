@@ -8,7 +8,8 @@ use twitch_irc::message::PrivmsgMessage;
 use twitch_irc::message::ServerMessage;
 
 use crate::apis::op_gg;
-use crate::apis::op_gg::summoners::Summoner;
+use crate::apis::op_gg::summoners::LpHistory;
+use crate::apis::op_gg::summoners::SummonerJson;
 use crate::apis::op_gg::Region;
 use crate::auth::IRCClient;
 use crate::handlers::persistence::Handler;
@@ -51,14 +52,14 @@ impl<'a> TheGrind<'a> {
 
                     match serde_json::from_value::<AdditionalInputs>(additional_inputs.0.clone()) {
                         Ok(additional_inputs) => {
-                            let summoner = op_gg::summoners::get_summoner(
+                            let summoner_json = op_gg::summoners::get_summoner_json(
                                 additional_inputs.region,
                                 &additional_inputs.summoner_name,
                             )
                             .await
                             .unwrap();
 
-                            let template_inputs = TemplateInputs { summoner };
+                            let template_inputs = TemplateInputs::from(summoner_json);
 
                             match reply
                                 .render_template(&self.templates_env, Some(&Value::from_serializable(&template_inputs)))
@@ -103,5 +104,18 @@ pub struct AdditionalInputs {
 
 #[derive(Clone, Debug, Serialize, Deserialize, Dummy)]
 pub struct TemplateInputs {
-    pub summoner: Summoner,
+    pub summoner_json: SummonerJson,
+    pub last_lp_history: Option<LpHistory>,
+}
+
+impl From<SummonerJson> for TemplateInputs {
+    fn from(value: SummonerJson) -> Self {
+        let mut lp_histories = value.lp_histories.clone();
+        lp_histories.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+
+        Self {
+            summoner_json: value,
+            last_lp_history: lp_histories.first().cloned(),
+        }
+    }
 }

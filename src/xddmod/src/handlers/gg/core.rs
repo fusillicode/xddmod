@@ -60,7 +60,7 @@ impl<'a> Gg<'a> {
                             .unwrap();
 
                             if let Some(game) =
-                                op_gg::games::get_last_game(additional_inputs.region, &summoner.summoner_id)
+                                op_gg::games::get_last_game(additional_inputs.region, &summoner.common.summoner_id)
                                     .await
                                     .unwrap()
                             {
