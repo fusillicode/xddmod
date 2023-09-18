@@ -34,7 +34,7 @@ twitch_api = { version = "0.7.0-rc.6", features = [
   "reqwest",
   "typed-builder",
 ] }
-twitch_types = { version = "0.4.2", features = ["time"] }
+twitch_types = { version = "0.4.3", features = ["time"] }
 twitch-irc = { git = "https://github.com/Retoon/twitch-irc-rs", "branch" = "reply_parent_feature", features = [
   "with-serde",
   "refreshing-token-native-tls",
