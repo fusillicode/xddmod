@@ -3,7 +3,7 @@ resolver = "2"
 members = ["src/*"]
 
 [workspace.dependencies]
-anyhow = "1.0.75"
+anyhow = { version = "1.0.75", features = ["backtrace"] }
 chrono = "0.4.31"
 fake = { version = "2.8.0", features = ["derive", "chrono", "serde_json"] }
 lazy_static = "1.4.0"
