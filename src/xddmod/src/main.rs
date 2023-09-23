@@ -71,10 +71,6 @@ async fn main() {
             tokio::spawn(async move {
                 let mut rip_bozo_g = rip_bozo.lock().await;
                 if let Ok(true) = rip_bozo_g.handle(&server_message).await {
-                    println!(
-                        "RipBozo deletion, short circuit handling of message {:?}",
-                        server_message
-                    );
                     return;
                 }
                 npc.handle(&server_message).await;
