@@ -33,10 +33,10 @@ impl<'a> RipBozo<'a> {
 }
 
 impl<'a> RipBozo<'a> {
-    pub async fn handle(&mut self, server_message: &ServerMessage) {
+    pub async fn handle(&mut self, server_message: &ServerMessage) -> anyhow::Result<bool> {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
             if twitch::helpers::is_from_streamer_or_mod(message) {
-                return;
+                return Ok(false);
             }
 
             let mentions = Mentions::new(&message.message_text);
@@ -48,14 +48,20 @@ impl<'a> RipBozo<'a> {
                 });
 
             let text_stats = TextStats::new(&message_without_mentions);
-            if text_stats.should_delete() {
-                self.delete_message_with_token_refresh(message, server_message).await;
+            if text_stats.should_be_deleted() {
+                let _ = self.delete_message_with_token_refresh(message, server_message).await;
+                return Ok(true);
             }
         }
+        Ok(false)
     }
 
     #[async_recursion]
-    async fn delete_message_with_token_refresh(&mut self, message: &PrivmsgMessage, server_message: &ServerMessage) {
+    async fn delete_message_with_token_refresh(
+        &mut self,
+        message: &PrivmsgMessage,
+        server_message: &ServerMessage,
+    ) -> anyhow::Result<()> {
         match self
             .helix_client
             .delete_chat_message(
@@ -66,18 +72,23 @@ impl<'a> RipBozo<'a> {
             )
             .await
         {
-            Ok(delete_response) => println!(
-                "Message deleted {:?}, delete response {:?}",
-                server_message, delete_response
-            ),
+            Ok(delete_response) => {
+                println!(
+                    "Message deleted {:?}, delete response {:?}",
+                    server_message, delete_response
+                );
+                Ok(())
+            }
             Err(error) => {
                 eprintln!("Error deleting message {:?}, error {:?}", server_message, error);
 
                 if twitch::helpers::is_unauthorized_error(&error) {
                     eprintln!("Refreshing token");
-                    self.token.refresh_token(self.helix_client.get_client()).await.unwrap();
-                    self.delete_message_with_token_refresh(message, server_message).await
+                    self.token.refresh_token(self.helix_client.get_client()).await?;
+                    return self.delete_message_with_token_refresh(message, server_message).await;
                 }
+
+                Err(error.into())
             }
         }
     }
@@ -163,7 +174,7 @@ impl<'a> TextStats<'a> {
         }
     }
 
-    pub fn should_delete(&self) -> bool {
+    pub fn should_be_deleted(&self) -> bool {
         if let Some(emojis_count) = self.only_emojis() {
             return emojis_count > 24;
         }
@@ -260,54 +271,54 @@ mod tests {
 
     #[test]
     fn test_text_stats_should_delete_works_as_expected() {
-        assert!(!TextStats::new(r#""#).should_delete());
-        assert!(!TextStats::new(r#" "#).should_delete());
-        assert!(!TextStats::new(r#"D:"#).should_delete());
-        assert!(!TextStats::new(r#":D"#).should_delete());
-        assert!(!TextStats::new(r#":)"#).should_delete());
-        assert!(!TextStats::new(r#":) :) :) :) :) :) :) :) :)"#).should_delete());
-        assert!(!TextStats::new(r#"hola"#).should_delete());
-        assert!(!TextStats::new(r#"..."#).should_delete());
-        assert!(!TextStats::new(r#"......"#).should_delete());
-        assert!(!TextStats::new(r#"........."#).should_delete());
-        assert!(!TextStats::new(r#"!!!"#).should_delete());
-        assert!(!TextStats::new(r#"!!!!!!"#).should_delete());
-        assert!(!TextStats::new(r#"!!!!!!!!!"#).should_delete());
-        assert!(!TextStats::new(r#"???"#).should_delete());
-        assert!(!TextStats::new(r#"??????"#).should_delete());
-        assert!(!TextStats::new(r#"?????????"#).should_delete());
-        assert!(!TextStats::new(r#"WTF!?!?!?!??!?!?!???!?!?!?"#).should_delete());
-        assert!(!TextStats::new(r#"@@"#).should_delete());
-        assert!(!TextStats::new(r#"…"#).should_delete());
-        assert!(!TextStats::new(r#"…o"#).should_delete());
+        assert!(!TextStats::new(r#""#).should_be_deleted());
+        assert!(!TextStats::new(r#" "#).should_be_deleted());
+        assert!(!TextStats::new(r#"D:"#).should_be_deleted());
+        assert!(!TextStats::new(r#":D"#).should_be_deleted());
+        assert!(!TextStats::new(r#":)"#).should_be_deleted());
+        assert!(!TextStats::new(r#":) :) :) :) :) :) :) :) :)"#).should_be_deleted());
+        assert!(!TextStats::new(r#"hola"#).should_be_deleted());
+        assert!(!TextStats::new(r#"..."#).should_be_deleted());
+        assert!(!TextStats::new(r#"......"#).should_be_deleted());
+        assert!(!TextStats::new(r#"........."#).should_be_deleted());
+        assert!(!TextStats::new(r#"!!!"#).should_be_deleted());
+        assert!(!TextStats::new(r#"!!!!!!"#).should_be_deleted());
+        assert!(!TextStats::new(r#"!!!!!!!!!"#).should_be_deleted());
+        assert!(!TextStats::new(r#"???"#).should_be_deleted());
+        assert!(!TextStats::new(r#"??????"#).should_be_deleted());
+        assert!(!TextStats::new(r#"?????????"#).should_be_deleted());
+        assert!(!TextStats::new(r#"WTF!?!?!?!??!?!?!???!?!?!?"#).should_be_deleted());
+        assert!(!TextStats::new(r#"@@"#).should_be_deleted());
+        assert!(!TextStats::new(r#"…"#).should_be_deleted());
+        assert!(!TextStats::new(r#"…o"#).should_be_deleted());
         assert!(!TextStats::new(
             r#""El presidente del Congreso, que aún no ha manifestado si se adherirá o no a la iniciativa del
         ministro de Industria, no quiso dar trascendencia al asunto, «que no tiene más valor que el de una anécdota y
         el de una corbata regalada»."#
         )
-        .should_delete());
-        assert!(!TextStats::new(r#"🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲"#).should_delete());
+        .should_be_deleted());
+        assert!(!TextStats::new(r#"🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲"#).should_be_deleted());
         assert!(
             !TextStats::new(r#"🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲"#)
-                .should_delete()
+                .should_be_deleted()
         );
-        assert!(!TextStats::new(r#"WHAT?!!! 🔥🔥🔥🗣️💯💯💯"#).should_delete());
-        assert!(!TextStats::new("🐝 \u{e0000}").should_delete());
-        assert!(!TextStats::new("A \u{e0000}").should_delete());
-        assert!(!TextStats::new("？").should_delete());
-        assert!(!TextStats::new("foo ？").should_delete());
-        assert!(!TextStats::new("о").should_delete());
-        assert!(!TextStats::new("о7").should_delete());
-        assert!(TextStats::new(r#"…ö"#).should_delete());
+        assert!(!TextStats::new(r#"WHAT?!!! 🔥🔥🔥🗣️💯💯💯"#).should_be_deleted());
+        assert!(!TextStats::new("🐝 \u{e0000}").should_be_deleted());
+        assert!(!TextStats::new("A \u{e0000}").should_be_deleted());
+        assert!(!TextStats::new("？").should_be_deleted());
+        assert!(!TextStats::new("foo ？").should_be_deleted());
+        assert!(!TextStats::new("о").should_be_deleted());
+        assert!(!TextStats::new("о7").should_be_deleted());
+        assert!(TextStats::new(r#"…ö"#).should_be_deleted());
         assert!(
             TextStats::new(r#"🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲🥲"#)
-                .should_delete()
+                .should_be_deleted()
         );
         assert!(TextStats::new(
             r#"🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲 🥲
         🥲 🥲 🥲 🥲 🥲 🥲"#
         )
-        .should_delete());
+        .should_be_deleted());
         assert!(TextStats::new(
             r#"
                 ✅✅✅✅✅✅✅✅✅✅✅✅
@@ -321,7 +332,7 @@ mod tests {
                 ✅✅✅✅✅✅✅✅✅✅✅✅
             "#
         )
-        .should_delete());
+        .should_be_deleted());
         assert!(TextStats::new(
             r#"
                 ⢿⣿⣿⣿⣭⠹⠛⠛⠛⢿⣿⣿⣿⣿⡿⣿⠷⠶⠿⢻⣿⣛⣦⣙⠻⣿
@@ -336,13 +347,13 @@ mod tests {
                 ⣿⣿⣷⣮⣭⣍⡛⠻⢿⣷⠿⣶⣶⣬⣬⣁⣉⣀⣀⣁⡤⢴⣺⣾⣽⡇
             "#
         )
-        .should_delete());
+        .should_be_deleted());
         assert!(TextStats::new(
             r#"⢿⣿⣿⣿⣭⠹⠛⠛⠛⢿⣿⣿⣿⣿⡿⣿⠷⠶⠿⢻⣿⣛⣦⣙⠻⣿ ⣿⣿⢿⣿⠏⠀⠀⡀⠀⠈⣿⢛⣽⣜⠯⣽⠀⠀⠀⠀⠙⢿⣷⣻⡀⢿ ⠐⠛⢿⣾⣖⣤⡀⠀⢀⡰⠿⢷⣶⣿⡇⠻⣖⣒⣒⣶⣿⣿⡟⢙⣶⣮ ⣤⠀⠀⠛⠻⠗⠿⠿⣯⡆⣿⣛⣿⡿⠿⠮⡶⠼⠟⠙⠊⠁⠀⠸⢣⣿ ⣿⣷⡀⠀⠀⠀⠀⠠⠭⣍⡉⢩⣥⡤⠥⣤⡶⣒⠀⠀⠀⠀⠀⢰⣿⣿ ⣿⣿⡽⡄⠀⠀⠀⢿⣿⣆⣿⣧⢡⣾⣿⡇⣾⣿⡇⠀⠀⠀⠀⣿⡇⠃ ⣿⣿⣷⣻⣆⢄⠀⠈⠉⠉⠛⠛⠘⠛⠛⠛⠙⠛⠁⠀⠀⠀⠀⣿⡇⢸ ⢞⣿⣿⣷⣝⣷⣝⠦⡀⠀⠀⠀⠀⠀⠀⠀⡀⢀⠀⠀⠀⠀⠀⠛⣿⠈ ⣦⡑⠛⣟⢿⡿⣿⣷⣝⢧⡀⠀⠀⣶⣸⡇⣿⢸⣧⠀⠀⠀⠀⢸⡿⡆ ⣿⣿⣷⣮⣭⣍⡛⠻⢿⣷⠿⣶⣶⣬⣬⣁⣉⣀⣀⣁⡤⢴⣺⣾⣽⡇"#
-        ).should_delete());
+        ).should_be_deleted());
         assert!(TextStats::new(
             r#"⢿⣿⣿⣿⣭⠹⠛⠛⠛⢿⣿⣿⣿⣿⡿⣿⠷⠶⠿⢻⣿⣛⣦⣙⠻⣿⣿⣿⢿⣿⠏⠀⠀⡀⠀⠈⣿⢛⣽⣜⠯⣽⠀⠀⠀⠀⠙⢿⣷⣻⡀⢿⠐⠛⢿⣾⣖⣤⡀⠀⢀⡰⠿⢷⣶⣿⡇⠻⣖⣒⣒⣶⣿⣿⡟⢙⣶⣮⣤⠀⠀⠛⠻⠗⠿⠿⣯⡆⣿⣛⣿⡿⠿⠮⡶⠼⠟⠙⠊⠁⠀⠸⢣⣿⣿⣷⡀⠀⠀⠀⠀⠠⠭⣍⡉⢩⣥⡤⠥⣤⡶⣒⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⡽⡄⠀⠀⠀⢿⣿⣆⣿⣧⢡⣾⣿⡇⣾⣿⡇⠀⠀⠀⠀⣿⡇⠃⣿⣿⣷⣻⣆⢄⠀⠈⠉⠉⠛⠛⠘⠛⠛⠛⠙⠛⠁⠀⠀⠀⠀⣿⡇⢸⢞⣿⣿⣷⣝⣷⣝⠦⡀⠀⠀⠀⠀⠀⠀⠀⡀⢀⠀⠀⠀⠀⠀⠛⣿⠈⣦⡑⠛⣟⢿⡿⣿⣷⣝⢧⡀⠀⠀⣶⣸⡇⣿⢸⣧⠀⠀⠀⠀⢸⡿⡆⣿⣿⣷⣮⣭⣍⡛⠻⢿⣷⠿⣶⣶⣬⣬⣁⣉⣀⣀⣁⡤⢴⣺⣾⣽⡇"#
-        ).should_delete());
+        ).should_be_deleted());
         assert!(TextStats::new(
             r"
                 ▬▬▬▬▬.◙.▬▬▬▬▬
@@ -361,7 +372,7 @@ mod tests {
             / \
             "
         )
-        .should_delete());
+        .should_be_deleted());
         assert!(TextStats::new(
             r#"
                 ———————————No stiches?———————————
@@ -381,6 +392,6 @@ mod tests {
                 ————————————————————————————-
             "#
         )
-        .should_delete());
+        .should_be_deleted());
     }
 }

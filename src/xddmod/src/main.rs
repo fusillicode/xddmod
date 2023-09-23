@@ -1,4 +1,7 @@
+use std::sync::Arc;
+
 use sqlx::SqlitePool;
+use tokio::sync::Mutex;
 use twitch_api::HelixClient;
 use xddmod::app_config::AppConfig;
 use xddmod::auth;
@@ -29,41 +32,52 @@ async fn main() {
 
     let templates_env = xddmod::templates_env::build_global_templates_env();
 
-    let npc = Npc {
-        irc_client: irc_client.clone(),
-        db_pool: db_pool.clone(),
-        templates_env: templates_env.clone(),
-    };
-    let gg = Gg {
-        irc_client: irc_client.clone(),
-        db_pool: db_pool.clone(),
-        templates_env: templates_env.clone(),
-    };
-    let sniffa = Sniffa {
-        irc_client: irc_client.clone(),
-        db_pool: db_pool.clone(),
-        templates_env: templates_env.clone(),
-    };
-    let mut rip_bozo = RipBozo {
+    let rip_bozo = Arc::new(Mutex::new(RipBozo {
         broadcaster_id: broadcaster.id,
         token: user_token,
         helix_client,
         db_pool: db_pool.clone(),
-    };
-    let the_grind = TheGrind {
+    }));
+    let npc = Arc::new(Npc {
         irc_client: irc_client.clone(),
         db_pool: db_pool.clone(),
         templates_env: templates_env.clone(),
-    };
+    });
+    let gg = Arc::new(Gg {
+        irc_client: irc_client.clone(),
+        db_pool: db_pool.clone(),
+        templates_env: templates_env.clone(),
+    });
+    let sniffa = Arc::new(Sniffa {
+        irc_client: irc_client.clone(),
+        db_pool: db_pool.clone(),
+        templates_env: templates_env.clone(),
+    });
+    let the_grind = Arc::new(TheGrind {
+        irc_client: irc_client.clone(),
+        db_pool: db_pool.clone(),
+        templates_env: templates_env.clone(),
+    });
 
     #[allow(clippy::single_match)]
     tokio::spawn(async move {
         while let Some(server_message) = incoming_messages.recv().await {
-            rip_bozo.handle(&server_message).await;
-            npc.handle(&server_message).await;
-            gg.handle(&server_message).await;
-            sniffa.handle(&server_message).await;
-            the_grind.handle(&server_message).await;
+            let rip_bozo = rip_bozo.clone();
+            let npc = npc.clone();
+            let gg = gg.clone();
+            let sniffa = sniffa.clone();
+            let the_grind = the_grind.clone();
+
+            tokio::spawn(async move {
+                let mut rip_bozo_g = rip_bozo.lock().await;
+                if let Ok(true) = rip_bozo_g.handle(&server_message).await {
+                    return;
+                }
+                npc.handle(&server_message).await;
+                gg.handle(&server_message).await;
+                sniffa.handle(&server_message).await;
+                the_grind.handle(&server_message).await;
+            });
         }
     })
     .await
