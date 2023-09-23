@@ -59,7 +59,13 @@ async fn main() {
     #[allow(clippy::single_match)]
     tokio::spawn(async move {
         while let Some(server_message) = incoming_messages.recv().await {
-            rip_bozo.handle(&server_message).await;
+            if let Ok(true) = rip_bozo.handle(&server_message).await {
+                println!(
+                    "RipBozo deletion, short circuit handling of message {:?}",
+                    server_message
+                );
+                continue;
+            }
             npc.handle(&server_message).await;
             gg.handle(&server_message).await;
             sniffa.handle(&server_message).await;
