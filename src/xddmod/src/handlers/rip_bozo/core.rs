@@ -3,9 +3,11 @@ use lazy_static::lazy_static;
 use regex::Captures;
 use regex::Regex;
 use sqlx::SqlitePool;
+use twitch_api::twitch_oauth2::client::Client as TwitchOauth2Client;
 use twitch_api::twitch_oauth2::TwitchToken;
 use twitch_api::twitch_oauth2::UserToken;
 use twitch_api::HelixClient;
+use twitch_api::HttpClient as TwitchHttpClient;
 use twitch_irc::message::PrivmsgMessage;
 use twitch_irc::message::ServerMessage;
 use twitch_types::UserId;
@@ -19,20 +21,20 @@ lazy_static! {
     static ref MENTION_REGEX: Regex = Regex::new(r"(@(\w+))").unwrap();
 }
 
-pub struct RipBozo<'a> {
+pub struct RipBozo<'a, C: TwitchHttpClient + TwitchOauth2Client> {
     pub broadcaster_id: UserId,
     pub token: UserToken,
-    pub helix_client: HelixClient<'a, reqwest::Client>,
+    pub helix_client: HelixClient<'a, C>,
     pub db_pool: SqlitePool,
 }
 
-impl<'a> RipBozo<'a> {
+impl<'a, C: TwitchHttpClient + TwitchOauth2Client> RipBozo<'a, C> {
     pub fn handler(&self) -> Handler {
         Handler::RipBozo
     }
 }
 
-impl<'a> RipBozo<'a> {
+impl<'a, C: TwitchHttpClient + TwitchOauth2Client> RipBozo<'a, C> {
     pub async fn handle(&mut self, server_message: &ServerMessage) -> anyhow::Result<bool> {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
             if twitch::helpers::is_from_streamer_or_mod(message) {
