@@ -10,6 +10,7 @@ use twitch_irc::TwitchIRCClient;
 use crate::handlers::persistence::Handler;
 use crate::handlers::persistence::Reply;
 use crate::handlers::HandlerError;
+use crate::handlers::TwitchApiError;
 use crate::handlers::TwitchError;
 use crate::poor_man_throttling;
 
@@ -26,7 +27,7 @@ impl<'a, T: Transport, L: LoginCredentials> Npc<'a, T, L> {
 }
 
 impl<'a, T: Transport, L: LoginCredentials> Npc<'a, T, L> {
-    pub async fn handle<RE: std::error::Error + Send + Sync + 'static>(
+    pub async fn handle<RE: TwitchApiError>(
         &self,
         server_message: &ServerMessage,
     ) -> Result<(), HandlerError<T, L, RE>> {
