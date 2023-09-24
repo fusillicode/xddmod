@@ -1,5 +1,3 @@
-use minijinja::context;
-use minijinja::Environment;
 use regex::RegexBuilder;
 use serde::Deserialize;
 use serde::Serialize;
@@ -23,14 +21,6 @@ pub enum PersistenceError {
     },
     #[error(transparent)]
     Db(#[from] sqlx::Error),
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum RenderingError {
-    #[error("Empty rendered reply {reply:?} with template env {template_env:?}")]
-    Empty { reply: Reply, template_env: String },
-    #[error(transparent)]
-    Templating(#[from] minijinja::Error),
 }
 
 #[derive(Debug, Clone)]
@@ -147,24 +137,6 @@ impl Reply {
                 }
             })
             .collect()
-    }
-
-    pub fn render_template<S: Serialize>(
-        &self,
-        template_env: &Environment,
-        ctx: Option<&S>,
-    ) -> Result<String, RenderingError> {
-        let ctx = ctx.map_or_else(|| context!(), |ctx| minijinja::value::Value::from_serializable(ctx));
-        let rendered_reply: String = template_env.render_str(&self.template, ctx).map(|s| s.trim().into())?;
-
-        if rendered_reply.is_empty() {
-            return Err(RenderingError::Empty {
-                reply: self.clone(),
-                template_env: format!("{:?}", template_env),
-            });
-        }
-
-        Ok(rendered_reply)
     }
 
     async fn all<'a>(
