@@ -73,7 +73,9 @@ async fn main() {
                 if let Ok(true) = rip_bozo_g.handle(&server_message).await {
                     return;
                 }
-                npc.handle(&server_message).await;
+                if let Err(e) = npc.handle(&server_message).await {
+                    eprintln!("Npc error {:?}", e);
+                };
                 gg.handle(&server_message).await;
                 sniffa.handle(&server_message).await;
                 the_grind.handle(&server_message).await;

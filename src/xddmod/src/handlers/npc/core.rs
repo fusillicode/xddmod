@@ -1,60 +1,42 @@
 use minijinja::value::Value;
 use minijinja::Environment;
 use sqlx::SqlitePool;
+use twitch_irc::login::LoginCredentials;
 use twitch_irc::message::PrivmsgMessage;
 use twitch_irc::message::ServerMessage;
+use twitch_irc::transport::Transport;
+use twitch_irc::TwitchIRCClient;
 
-use crate::auth::IRCClient;
 use crate::handlers::persistence::Handler;
 use crate::handlers::persistence::Reply;
+use crate::handlers::HandlerError;
 use crate::poor_man_throttling;
 
-pub struct Npc<'a> {
-    pub irc_client: IRCClient,
+pub struct Npc<'a, T: Transport, L: LoginCredentials> {
+    pub irc_client: TwitchIRCClient<T, L>,
     pub db_pool: SqlitePool,
     pub templates_env: Environment<'a>,
 }
 
-impl<'a> Npc<'a> {
+impl<'a, T: Transport, L: LoginCredentials> Npc<'a, T, L> {
     pub fn handler(&self) -> Handler {
         Handler::Npc
     }
 }
 
-impl<'a> Npc<'a> {
-    pub async fn handle(&self, server_message: &ServerMessage) {
+impl<'a, T: Transport, L: LoginCredentials> Npc<'a, T, L> {
+    pub async fn handle(&self, server_message: &ServerMessage) -> Result<(), HandlerError<T, L>> {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
-            match Reply::matching(self.handler(), message, &self.db_pool).await.as_slice() {
-                [reply] => {
-                    // FIXME: poor man throttling
-                    match poor_man_throttling::should_throttle(message, reply) {
-                        Ok(false) => (),
-                        Ok(true) => {
-                            eprintln!(
-                                "Skip reply: message {:?}, sender {:?}, reply {:?}",
-                                message.message_text, message.sender, reply.template
-                            );
-                            return;
-                        }
-                        Err(error) => {
-                            eprintln!("Error throttling, error: {:?}", error);
-                        }
-                    }
+            let (reply, _) = Reply::first_matching(self.handler(), message, &self.db_pool).await?;
 
-                    match reply.render_template::<Value>(&self.templates_env, None) {
-                        Ok(rendered_reply) if rendered_reply.is_empty() => {
-                            eprintln!("Rendered reply template empty: {:?}", reply)
-                        }
-                        Ok(rendered_reply) => self.irc_client.say_in_reply_to(message, rendered_reply).await.unwrap(),
-                        Err(e) => eprintln!("Error rendering reply template, error: {:?}, {:?}.", reply, e),
-                    }
-                }
-                [] => {}
-                multiple_matching_replies => eprintln!(
-                    "Multiple matching replies for message: {:?}, {:?}.",
-                    multiple_matching_replies, server_message
-                ),
+            // FIXME: poor man throttling
+            if poor_man_throttling::should_throttle(message, &reply)? {
+                return Ok(());
             }
+
+            let rendered_reply = reply.render_template::<Value>(&self.templates_env, None)?;
+            self.irc_client.say_in_reply_to(message, rendered_reply).await?;
         }
+        Ok(())
     }
 }

@@ -9,6 +9,30 @@ use sqlx::types::chrono::Utc;
 use sqlx::types::Json;
 use twitch_irc::message::PrivmsgMessage;
 
+#[derive(thiserror::Error, Debug)]
+pub enum PersistenceError {
+    #[error("No reply matching message {message:?}, regex errors {regex_errors:?}")]
+    NoMatchingReply {
+        message: String,
+        regex_errors: Vec<regex::Error>,
+    },
+    #[error("Multiple replies matching message {message:?}, regex errors {regex_errors:?}")]
+    MultipleMatchingReplies {
+        message: String,
+        regex_errors: Vec<regex::Error>,
+    },
+    #[error(transparent)]
+    Db(#[from] sqlx::Error),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum RenderingError {
+    #[error("Empty rendered reply {reply:?} with template env {template_env:?}")]
+    Empty { reply: Reply, template_env: String },
+    #[error(transparent)]
+    Templating(#[from] minijinja::Error),
+}
+
 #[derive(Debug, Clone)]
 pub struct Reply {
     pub id: i64,
@@ -47,6 +71,58 @@ impl MatchableMessage for PrivmsgMessage {
 }
 
 impl Reply {
+    pub async fn first_matching<'a>(
+        handler: Handler,
+        matchable_message: &impl MatchableMessage,
+        executor: impl SqliteExecutor<'a>,
+    ) -> Result<(Reply, Vec<regex::Error>), PersistenceError> {
+        let (replies, regex_errors) = Self::matching_2(handler, matchable_message, executor).await?;
+
+        if let [reply] = replies.as_slice() {
+            return Ok((reply.clone(), regex_errors));
+        }
+
+        let message = matchable_message.text();
+
+        if replies.first().is_none() {
+            return Err(PersistenceError::NoMatchingReply {
+                message: message.into(),
+                regex_errors,
+            });
+        }
+
+        Err(PersistenceError::MultipleMatchingReplies {
+            message: message.into(),
+            regex_errors,
+        })
+    }
+
+    pub async fn matching_2<'a>(
+        handler: Handler,
+        matchable_message: &impl MatchableMessage,
+        executor: impl SqliteExecutor<'a>,
+    ) -> Result<(Vec<Reply>, Vec<regex::Error>), sqlx::Error> {
+        let matchable_message_text = matchable_message.text();
+
+        let (matching_replies, re_errors) = Self::all(handler, matchable_message.channel(), executor)
+            .await?
+            .into_iter()
+            .fold((vec![], vec![]), |(mut matching_replies, mut re_errors), reply| {
+                match RegexBuilder::new(&reply.pattern)
+                    .case_insensitive(reply.case_insensitive)
+                    .build()
+                {
+                    Ok(re) if re.is_match(matchable_message_text) => matching_replies.push(reply),
+                    Ok(_) => (),
+                    Err(re_error) => re_errors.push(re_error),
+                };
+
+                (matching_replies, re_errors)
+            });
+
+        Ok((matching_replies, re_errors))
+    }
+
     pub async fn matching<'a>(
         handler: Handler,
         matchable_message: &impl MatchableMessage,
@@ -77,12 +153,18 @@ impl Reply {
         &self,
         template_env: &Environment,
         ctx: Option<&S>,
-    ) -> Result<String, minijinja::Error> {
-        let ctx = match ctx {
-            Some(ctx) => minijinja::value::Value::from_serializable(ctx),
-            None => context!(),
-        };
-        template_env.render_str(&self.template, ctx).map(|s| s.trim().into())
+    ) -> Result<String, RenderingError> {
+        let ctx = ctx.map_or_else(|| context!(), |ctx| minijinja::value::Value::from_serializable(ctx));
+        let rendered_reply: String = template_env.render_str(&self.template, ctx).map(|s| s.trim().into())?;
+
+        if rendered_reply.is_empty() {
+            return Err(RenderingError::Empty {
+                reply: self.clone(),
+                template_env: format!("{:?}", template_env),
+            });
+        }
+
+        Ok(rendered_reply)
     }
 
     async fn all<'a>(
