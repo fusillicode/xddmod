@@ -73,7 +73,7 @@ async fn main() {
                 if let Ok(true) = rip_bozo_g.handle(&server_message).await {
                     return;
                 }
-                if let Err(e) = npc.handle(&server_message).await {
+                if let Err(e) = npc.handle::<reqwest::Error>(&server_message).await {
                     eprintln!("Npc error {:?}", e);
                 };
                 gg.handle(&server_message).await;

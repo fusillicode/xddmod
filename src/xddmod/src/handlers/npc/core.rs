@@ -10,6 +10,7 @@ use twitch_irc::TwitchIRCClient;
 use crate::handlers::persistence::Handler;
 use crate::handlers::persistence::Reply;
 use crate::handlers::HandlerError;
+use crate::handlers::TwitchError;
 use crate::poor_man_throttling;
 
 pub struct Npc<'a, T: Transport, L: LoginCredentials> {
@@ -25,7 +26,10 @@ impl<'a, T: Transport, L: LoginCredentials> Npc<'a, T, L> {
 }
 
 impl<'a, T: Transport, L: LoginCredentials> Npc<'a, T, L> {
-    pub async fn handle(&self, server_message: &ServerMessage) -> Result<(), HandlerError<T, L>> {
+    pub async fn handle<RE: std::error::Error + Send + Sync + 'static>(
+        &self,
+        server_message: &ServerMessage,
+    ) -> Result<(), HandlerError<T, L, RE>> {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
             let (reply, _) = Reply::first_matching(self.handler(), message, &self.db_pool).await?;
 
@@ -35,7 +39,11 @@ impl<'a, T: Transport, L: LoginCredentials> Npc<'a, T, L> {
             }
 
             let rendered_reply = reply.render_template::<Value>(&self.templates_env, None)?;
-            self.irc_client.say_in_reply_to(message, rendered_reply).await?;
+
+            self.irc_client
+                .say_in_reply_to(message, rendered_reply)
+                .await
+                .map_err(TwitchError::from)?;
         }
         Ok(())
     }
