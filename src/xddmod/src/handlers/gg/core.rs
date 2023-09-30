@@ -60,13 +60,10 @@ impl<'a, T: Transport, L: LoginCredentials> Gg<'a, T, L> {
                 Ok(additional_inputs) => {
                     let summoner =
                         op_gg::summoners::get_summoner(additional_inputs.region, &additional_inputs.summoner_name)
-                            .await
-                            .unwrap();
+                            .await?;
 
                     if let Some(game) =
-                        op_gg::games::get_last_game(additional_inputs.region, &summoner.common.summoner_id)
-                            .await
-                            .unwrap()
+                        op_gg::games::get_last_game(additional_inputs.region, &summoner.common.summoner_id).await?
                     {
                         let template_inputs = TemplateInputs {
                             champion: Champion::by_key(game.my_data.champion_key.into(), &self.db_pool)

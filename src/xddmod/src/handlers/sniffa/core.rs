@@ -61,12 +61,10 @@ impl<'a, T: Transport, L: LoginCredentials> Sniffa<'a, T, L> {
                 Ok(additional_inputs) => {
                     let summoner =
                         op_gg::summoners::get_summoner(additional_inputs.region, &additional_inputs.summoner_name)
-                            .await
-                            .unwrap();
+                            .await?;
 
-                    let spectate_status = get_spectate_status(additional_inputs.region, &summoner.common.summoner_id)
-                        .await
-                        .unwrap();
+                    let spectate_status =
+                        get_spectate_status(additional_inputs.region, &summoner.common.summoner_id).await?;
 
                     let template_inputs = TemplateInputs {
                         summoner,
