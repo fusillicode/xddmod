@@ -25,6 +25,8 @@ reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sqlx = { workspace = true }
+strum = { version = "0.25" }
+strum_macros = { version = "0.25" }
 timeago = "0.4.2"
 thiserror = { workspace = true }
 tokio = { workspace = true }

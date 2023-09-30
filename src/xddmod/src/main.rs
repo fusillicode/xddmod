@@ -74,16 +74,16 @@ async fn main() {
                     return;
                 }
                 if let Err(e) = npc.handle::<reqwest::Error>(&server_message).await {
-                    eprintln!("Npc error {:?}", e);
+                    eprintln!("{} error {:?}", npc.handler(), e);
                 };
                 if let Err(e) = gg.handle::<reqwest::Error>(&server_message).await {
-                    eprintln!("Gg error {:?}", e);
+                    eprintln!("{} error {:?}", gg.handler(), e);
                 };
                 if let Err(e) = sniffa.handle::<reqwest::Error>(&server_message).await {
-                    eprintln!("Sniffa error {:?}", e);
+                    eprintln!("{} error {:?}", sniffa.handler(), e);
                 };
                 if let Err(e) = the_grind.handle::<reqwest::Error>(&server_message).await {
-                    eprintln!("TheGrind error {:?}", e);
+                    eprintln!("{} error {:?}", the_grind.handler(), e);
                 };
             });
         }

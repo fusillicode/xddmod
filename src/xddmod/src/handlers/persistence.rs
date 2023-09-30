@@ -201,7 +201,7 @@ impl TryFrom<FirstMatching> for PersistenceError {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, sqlx::Type)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, sqlx::Type, strum_macros::Display)]
 #[sqlx(type_name = "TEXT")]
 pub enum Handler {
     Gamba,
