@@ -1,3 +1,4 @@
+use sqlx::types::chrono::Utc;
 use twitch_irc::message::PrivmsgMessage;
 
 use crate::apis::twitch;
@@ -22,13 +23,13 @@ pub fn should_throttle(message: &PrivmsgMessage, reply: &Reply) -> anyhow::Resul
     let throttling = throttle
         .get(&reply.id)
         .map(|last_reply_date_time| {
-            let time_passed = sqlx::types::chrono::Utc::now() - *last_reply_date_time;
+            let time_passed = Utc::now() - *last_reply_date_time;
             time_passed < chrono::Duration::seconds(20)
         })
         .unwrap_or_default();
 
     if !throttling {
-        throttle.insert(reply.id, sqlx::types::chrono::Utc::now());
+        throttle.insert(reply.id, Utc::now());
     }
 
     Ok(throttling)
