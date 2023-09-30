@@ -82,7 +82,9 @@ async fn main() {
                 if let Err(e) = sniffa.handle::<reqwest::Error>(&server_message).await {
                     eprintln!("Sniffa error {:?}", e);
                 };
-                the_grind.handle(&server_message).await;
+                if let Err(e) = the_grind.handle::<reqwest::Error>(&server_message).await {
+                    eprintln!("TheGrind error {:?}", e);
+                };
             });
         }
     })
