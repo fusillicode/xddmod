@@ -79,7 +79,9 @@ async fn main() {
                 if let Err(e) = gg.handle::<reqwest::Error>(&server_message).await {
                     eprintln!("Gg error {:?}", e);
                 };
-                sniffa.handle(&server_message).await;
+                if let Err(e) = sniffa.handle::<reqwest::Error>(&server_message).await {
+                    eprintln!("Sniffa error {:?}", e);
+                };
                 the_grind.handle(&server_message).await;
             });
         }
