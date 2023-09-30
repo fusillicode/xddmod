@@ -10,23 +10,25 @@ use vec1::Vec1;
 
 #[derive(thiserror::Error, Debug)]
 pub enum PersistenceError {
-    #[error("Single reply {reply:?} matching message {message:?}, regex errors {regex_errors:?}")]
+    #[error("single reply {reply:?} matching message {message:?}, regex errors {regex_errors:?}")]
     SingleReplyAndErrors {
         reply: Reply,
         message: String,
         regex_errors: Vec1<regex::Error>,
     },
-    #[error("No reply matching message {message:?}, regex errors {regex_errors:?}")]
+    #[error("no reply matching message {message:?}, regex errors {regex_errors:?}")]
     NoReplyAndErrors {
         message: String,
         regex_errors: Vec1<regex::Error>,
     },
-    #[error("Multiple replies {replies:?} matching message {message:?}, regex errors {regex_errors:?}")]
+    #[error("multiple replies {replies:?} matching message {message:?}, regex errors {regex_errors:?}")]
     MultipleReplies {
         replies: Vec<Reply>,
         message: String,
         regex_errors: Vec<regex::Error>,
     },
+    #[error("missing additional inputs in {reply:?}")]
+    MissingAdditionalInputs { reply: Reply },
     #[error(transparent)]
     Db(#[from] sqlx::Error),
 }

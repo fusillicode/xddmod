@@ -6,7 +6,7 @@ use crate::handlers::persistence::Reply;
 
 #[derive(thiserror::Error, Debug)]
 pub enum RenderingError {
-    #[error("Empty rendered reply {reply:?} with template env {template_env:?}")]
+    #[error("empty rendered reply {reply:?} with template env {template_env:?}")]
     EmptyRenderedReply { reply: Reply, template_env: String },
     #[error(transparent)]
     Templating(#[from] minijinja::Error),

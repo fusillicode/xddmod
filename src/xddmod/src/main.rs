@@ -76,7 +76,9 @@ async fn main() {
                 if let Err(e) = npc.handle::<reqwest::Error>(&server_message).await {
                     eprintln!("Npc error {:?}", e);
                 };
-                gg.handle(&server_message).await;
+                if let Err(e) = gg.handle::<reqwest::Error>(&server_message).await {
+                    eprintln!("Gg error {:?}", e);
+                };
                 sniffa.handle(&server_message).await;
                 the_grind.handle(&server_message).await;
             });
