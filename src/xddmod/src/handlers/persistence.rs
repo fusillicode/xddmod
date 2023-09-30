@@ -6,36 +6,29 @@ use sqlx::types::chrono::DateTime;
 use sqlx::types::chrono::Utc;
 use sqlx::types::Json;
 use twitch_irc::message::PrivmsgMessage;
+use vec1::Vec1;
 
 #[derive(thiserror::Error, Debug)]
 pub enum PersistenceError {
-    #[error("No reply matching message {message:?}, regex errors {regex_errors:?}")]
-    NoMatchingReply {
+    #[error("Single reply {reply:?} matching message {message:?}, regex errors {regex_errors:?}")]
+    SingleReplyAndErrors {
+        reply: Reply,
         message: String,
-        regex_errors: Vec<regex::Error>,
+        regex_errors: Vec1<regex::Error>,
     },
-    #[error("Multiple replies matching message {message:?}, regex errors {regex_errors:?}")]
-    MultipleMatchingReplies {
+    #[error("No reply matching message {message:?}, regex errors {regex_errors:?}")]
+    NoReplyAndErrors {
+        message: String,
+        regex_errors: Vec1<regex::Error>,
+    },
+    #[error("Multiple replies {replies:?} matching message {message:?}, regex errors {regex_errors:?}")]
+    MultipleReplies {
+        replies: Vec<Reply>,
         message: String,
         regex_errors: Vec<regex::Error>,
     },
     #[error(transparent)]
     Db(#[from] sqlx::Error),
-}
-
-#[derive(Debug, Clone)]
-pub struct Reply {
-    pub id: i64,
-    pub handler: Option<Handler>,
-    pub pattern: String,
-    pub case_insensitive: bool,
-    pub template: String,
-    pub channel: Option<String>,
-    pub enabled: bool,
-    pub additional_inputs: Option<Json<serde_json::Value>>,
-    pub created_by: String,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
 }
 
 pub trait MatchableMessage {
@@ -60,31 +53,48 @@ impl MatchableMessage for PrivmsgMessage {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct Reply {
+    pub id: i64,
+    pub handler: Option<Handler>,
+    pub pattern: String,
+    pub case_insensitive: bool,
+    pub template: String,
+    pub channel: Option<String>,
+    pub enabled: bool,
+    pub additional_inputs: Option<Json<serde_json::Value>>,
+    pub created_by: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
 impl Reply {
     pub async fn first_matching<'a>(
         handler: Handler,
         matchable_message: &impl MatchableMessage,
         executor: impl SqliteExecutor<'a>,
-    ) -> Result<(Reply, Vec<regex::Error>), PersistenceError> {
+    ) -> Result<Option<FirstMatching>, PersistenceError> {
         let (replies, regex_errors) = Self::matching_2(handler, matchable_message, executor).await?;
-
-        if let [reply] = replies.as_slice() {
-            return Ok((reply.clone(), regex_errors));
-        }
 
         let message = matchable_message.text();
 
-        if replies.first().is_none() {
-            return Err(PersistenceError::NoMatchingReply {
+        match (replies.as_slice(), regex_errors.as_slice()) {
+            ([], []) => Ok(None),
+            ([reply], regex_errors) => Ok(Some(FirstMatching {
+                reply: reply.to_owned(),
+                message: message.to_owned(),
+                regex_errors: regex_errors.to_owned(),
+            })),
+            ([], regex_errors) => Err(PersistenceError::NoReplyAndErrors {
                 message: message.into(),
-                regex_errors,
-            });
+                regex_errors: regex_errors.try_into().unwrap(),
+            }),
+            (replies, regex_errors) => Err(PersistenceError::MultipleReplies {
+                replies: replies.to_owned(),
+                message: message.into(),
+                regex_errors: regex_errors.try_into().unwrap(),
+            }),
         }
-
-        Err(PersistenceError::MultipleMatchingReplies {
-            message: message.into(),
-            regex_errors,
-        })
     }
 
     pub async fn matching_2<'a>(
@@ -168,6 +178,24 @@ impl Reply {
         )
         .fetch_all(executor)
         .await
+    }
+}
+
+pub struct FirstMatching {
+    pub reply: Reply,
+    message: String,
+    regex_errors: Vec<regex::Error>,
+}
+
+impl TryFrom<FirstMatching> for PersistenceError {
+    type Error = vec1::Size0Error;
+
+    fn try_from(value: FirstMatching) -> Result<Self, Self::Error> {
+        Ok(Self::SingleReplyAndErrors {
+            reply: value.reply,
+            message: value.message,
+            regex_errors: value.regex_errors.try_into()?,
+        })
     }
 }
 

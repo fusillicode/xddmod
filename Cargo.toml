@@ -25,3 +25,4 @@ sqlx = { version = "0.6.3", features = [
 thiserror = { version = "1.0.48" }
 tokio = { version = "1.32.0", features = ["full"] }
 url = { version = "2.4.1", features = ["serde"] }
+vec1 = { version = "1.10.1" }
