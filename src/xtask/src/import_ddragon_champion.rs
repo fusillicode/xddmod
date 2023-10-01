@@ -19,19 +19,19 @@ pub struct ImportDdragonChampion {
 
 impl ImportDdragonChampion {
     pub async fn run(self) -> anyhow::Result<()> {
-        let db_pool = SqlitePool::connect(self.db_url.as_ref()).await.unwrap();
+        let db_pool = SqlitePool::connect(self.db_url.as_ref()).await?;
 
         let api_response: ApiResponse = reqwest::get(format!("{}/champion.json", self.ddragon_api_base_url))
             .await?
             .json()
             .await?;
 
-        let mut tx = db_pool.begin().await.unwrap();
-        Champion::truncate(&mut tx).await.unwrap();
+        let mut tx = db_pool.begin().await?;
+        Champion::truncate(&mut tx).await?;
         for champion in api_response.data.into_values() {
-            champion.insert(&mut tx).await.unwrap();
+            champion.insert(&mut tx).await?;
         }
-        tx.commit().await.unwrap();
+        tx.commit().await?;
 
         Ok(())
     }

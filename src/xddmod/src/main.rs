@@ -12,11 +12,13 @@ use xddmod::handlers::sniffa::core::Sniffa;
 use xddmod::handlers::the_grind::core::TheGrind;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> anyhow::Result<()> {
     let app_config = AppConfig::init();
-    let channel = std::env::args().nth(1).unwrap();
+    let channel = std::env::args()
+        .nth(1)
+        .ok_or_else(|| anyhow::anyhow!("missing 1st CLI arg, `channel`"))?;
 
-    let db_pool = SqlitePool::connect(app_config.db_url.as_ref()).await.unwrap();
+    let db_pool = SqlitePool::connect(app_config.db_url.as_ref()).await?;
 
     let (mut incoming_messages, irc_client, user_token) = auth::authenticate(app_config.clone()).await;
 
@@ -24,11 +26,16 @@ async fn main() {
 
     let broadcaster = helix_client
         .get_user_from_login(&channel, &user_token)
-        .await
-        .unwrap()
-        .unwrap();
+        .await?
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "no broacaster found for `channel` {} with `user_token` {:?}",
+                channel,
+                user_token
+            )
+        })?;
 
-    irc_client.join(channel).unwrap();
+    irc_client.join(channel)?;
 
     let templates_env = xddmod::templates_env::build_global_templates_env();
 
@@ -88,6 +95,7 @@ async fn main() {
             });
         }
     })
-    .await
-    .unwrap();
+    .await?;
+
+    Ok(())
 }
