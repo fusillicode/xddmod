@@ -14,6 +14,8 @@ use xddmod::handlers::the_grind::core::TheGrind;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    console_subscriber::init();
+
     let app_config = AppConfig::init();
     let channel = std::env::args()
         .nth(1)
