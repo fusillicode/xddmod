@@ -69,8 +69,8 @@ async fn main() {
             let the_grind = the_grind.clone();
 
             tokio::spawn(async move {
-                let mut rip_bozo_g = rip_bozo.lock().await;
-                if let Ok(true) = rip_bozo_g.handle(&server_message).await {
+                let mut rip_bozo_guard = rip_bozo.lock().await;
+                if let Ok(true) = rip_bozo_guard.handle(&server_message).await {
                     return;
                 }
                 if let Err(e) = npc.handle(&server_message).await {
