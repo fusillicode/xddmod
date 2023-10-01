@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use sqlx::types::chrono::Utc;
 use twitch_irc::message::PrivmsgMessage;
 
@@ -18,7 +19,7 @@ pub fn should_throttle(message: &PrivmsgMessage, reply: &Reply) -> anyhow::Resul
 
     let mut throttle = THROTTLE
         .lock()
-        .map_err(|error| anyhow::anyhow!("Cannot get THROTTLE Lock, error: {:?}", error))?;
+        .map_err(|error| anyhow!("Cannot get THROTTLE Lock, error: {:?}", error))?;
 
     let throttling = throttle
         .get(&reply.id)

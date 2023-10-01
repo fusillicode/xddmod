@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use anyhow::anyhow;
 use sqlx::SqlitePool;
 use tokio::sync::Mutex;
 use twitch_api::HelixClient;
@@ -16,7 +17,7 @@ async fn main() -> anyhow::Result<()> {
     let app_config = AppConfig::init();
     let channel = std::env::args()
         .nth(1)
-        .ok_or_else(|| anyhow::anyhow!("missing 1st CLI arg, `channel`"))?;
+        .ok_or_else(|| anyhow!("missing 1st CLI arg, `channel`"))?;
 
     let db_pool = SqlitePool::connect(app_config.db_url.as_ref()).await?;
 
@@ -28,7 +29,7 @@ async fn main() -> anyhow::Result<()> {
         .get_user_from_login(&channel, &user_token)
         .await?
         .ok_or_else(|| {
-            anyhow::anyhow!(
+            anyhow!(
                 "no broacaster found for `channel` {} with `user_token` {:?}",
                 channel,
                 user_token
