@@ -73,16 +73,16 @@ async fn main() {
                 if let Ok(true) = rip_bozo_g.handle(&server_message).await {
                     return;
                 }
-                if let Err(e) = npc.handle::<reqwest::Error>(&server_message).await {
+                if let Err(e) = npc.handle(&server_message).await {
                     eprintln!("{} error {:?}", npc.handler(), e);
                 };
-                if let Err(e) = gg.handle::<reqwest::Error>(&server_message).await {
+                if let Err(e) = gg.handle(&server_message).await {
                     eprintln!("{} error {:?}", gg.handler(), e);
                 };
-                if let Err(e) = sniffa.handle::<reqwest::Error>(&server_message).await {
+                if let Err(e) = sniffa.handle(&server_message).await {
                     eprintln!("{} error {:?}", sniffa.handler(), e);
                 };
-                if let Err(e) = the_grind.handle::<reqwest::Error>(&server_message).await {
+                if let Err(e) = the_grind.handle(&server_message).await {
                     eprintln!("{} error {:?}", the_grind.handler(), e);
                 };
             });

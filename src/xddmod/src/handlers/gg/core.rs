@@ -17,9 +17,6 @@ use crate::apis::op_gg::Region;
 use crate::handlers::persistence::Handler;
 use crate::handlers::persistence::PersistenceError;
 use crate::handlers::persistence::Reply;
-use crate::handlers::HandlerError;
-use crate::handlers::TwitchApiError;
-use crate::handlers::TwitchError;
 use crate::poor_man_throttling;
 
 pub struct Gg<'a, T: Transport, L: LoginCredentials> {
@@ -35,10 +32,7 @@ impl<'a, T: Transport, L: LoginCredentials> Gg<'a, T, L> {
 }
 
 impl<'a, T: Transport, L: LoginCredentials> Gg<'a, T, L> {
-    pub async fn handle<RE: TwitchApiError>(
-        &self,
-        server_message: &ServerMessage,
-    ) -> Result<(), HandlerError<T, L, RE>> {
+    pub async fn handle(&self, server_message: &ServerMessage) -> anyhow::Result<()> {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
             let Some(first_matching) = Reply::first_matching(self.handler(), message, &self.db_pool).await? else {
                 return Ok(());
@@ -56,43 +50,32 @@ impl<'a, T: Transport, L: LoginCredentials> Gg<'a, T, L> {
                 return Ok(());
             }
 
-            match serde_json::from_value::<AdditionalInputs>(additional_inputs.0.clone()) {
-                Ok(additional_inputs) => {
-                    let summoner =
-                        op_gg::summoners::get_summoner(additional_inputs.region, &additional_inputs.summoner_name)
-                            .await?;
+            let additional_inputs = serde_json::from_value::<AdditionalInputs>(additional_inputs.0.clone())?;
 
-                    if let Some(game) =
-                        op_gg::games::get_last_game(additional_inputs.region, &summoner.common.summoner_id).await?
-                    {
-                        let template_inputs = TemplateInputs {
-                            champion: Champion::by_key(game.my_data.champion_key.into(), &self.db_pool)
-                                .await
-                                .unwrap(),
-                            game,
-                        };
+            let summoner =
+                op_gg::summoners::get_summoner(additional_inputs.region, &additional_inputs.summoner_name).await?;
 
-                        let rendered_reply = first_matching.reply.render_template::<Value>(
-                            &self.templates_env,
-                            Some(&Value::from_serializable(&template_inputs)),
-                        )?;
+            if let Some(game) =
+                op_gg::games::get_last_game(additional_inputs.region, &summoner.common.summoner_id).await?
+            {
+                let template_inputs = TemplateInputs {
+                    champion: Champion::by_key(game.my_data.champion_key.into(), &self.db_pool)
+                        .await
+                        .unwrap(),
+                    game,
+                };
 
-                        self.irc_client
-                            .say_in_reply_to(message, rendered_reply)
-                            .await
-                            .map_err(TwitchError::from)?;
+                let rendered_reply = first_matching
+                    .reply
+                    .render_template::<Value>(&self.templates_env, Some(&Value::from_serializable(&template_inputs)))?;
 
-                        if let Ok(error) = PersistenceError::try_from(first_matching) {
-                            return Err(error.into());
-                        };
-                    } else {
-                        eprintln!("No games returned for reply: {:?}.", first_matching.reply)
-                    }
-                }
-                Err(error) => eprintln!(
-                    "Error deserializing AdditionalInputs from Reply for ServerMessage: {:?}, {:?}, {:?}.",
-                    error, server_message, first_matching.reply
-                ),
+                self.irc_client.say_in_reply_to(message, rendered_reply).await?;
+
+                if let Ok(error) = PersistenceError::try_from(first_matching) {
+                    return Err(error.into());
+                };
+            } else {
+                eprintln!("No games returned for reply: {:?}.", first_matching.reply)
             }
         }
         Ok(())
