@@ -15,6 +15,7 @@ axum = "0.6.20"
 chrono = { workspace = true }
 chrono-tz = "0.8.3"
 config = "0.13.3"
+console-subscriber = { version = "0.2.0" }
 fake = { workspace = true }
 hyper = { version = "0.14.27", features = ["full"] }
 lazy_static = { workspace = true }
@@ -25,7 +26,10 @@ reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sqlx = { workspace = true }
+strum = { version = "0.25" }
+strum_macros = { version = "0.25" }
 timeago = "0.4.2"
+thiserror = { workspace = true }
 tokio = { workspace = true }
 tower = "0.4.13"
 twitch_api = { version = "0.7.0-rc.7", features = [
@@ -41,4 +45,5 @@ twitch-irc = { git = "https://github.com/Retoon/twitch-irc-rs", "branch" = "repl
 ] }
 unicode-segmentation = "1.9.0"
 url = { workspace = true }
+vec1 = { workspace = true }
 webbrowser = "0.8.11"

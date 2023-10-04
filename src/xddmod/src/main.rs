@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use anyhow::anyhow;
 use sqlx::SqlitePool;
 use tokio::sync::Mutex;
 use twitch_api::HelixClient;
@@ -12,11 +13,15 @@ use xddmod::handlers::sniffa::core::Sniffa;
 use xddmod::handlers::the_grind::core::TheGrind;
 
 #[tokio::main]
-async fn main() {
-    let app_config = AppConfig::init();
-    let channel = std::env::args().nth(1).unwrap();
+async fn main() -> anyhow::Result<()> {
+    console_subscriber::init();
 
-    let db_pool = SqlitePool::connect(app_config.db_url.as_ref()).await.unwrap();
+    let app_config = AppConfig::init();
+    let channel = std::env::args()
+        .nth(1)
+        .ok_or_else(|| anyhow!("missing 1st CLI arg, `channel`"))?;
+
+    let db_pool = SqlitePool::connect(app_config.db_url.as_ref()).await?;
 
     let (mut incoming_messages, irc_client, user_token) = auth::authenticate(app_config.clone()).await;
 
@@ -24,11 +29,16 @@ async fn main() {
 
     let broadcaster = helix_client
         .get_user_from_login(&channel, &user_token)
-        .await
-        .unwrap()
-        .unwrap();
+        .await?
+        .ok_or_else(|| {
+            anyhow!(
+                "no broacaster found for `channel` {} with `user_token` {:?}",
+                channel,
+                user_token
+            )
+        })?;
 
-    irc_client.join(channel).unwrap();
+    irc_client.join(channel)?;
 
     let templates_env = xddmod::templates_env::build_global_templates_env();
 
@@ -69,17 +79,26 @@ async fn main() {
             let the_grind = the_grind.clone();
 
             tokio::spawn(async move {
-                let mut rip_bozo_g = rip_bozo.lock().await;
-                if let Ok(true) = rip_bozo_g.handle(&server_message).await {
+                let mut rip_bozo_guard = rip_bozo.lock().await;
+                if let Ok(true) = rip_bozo_guard.handle(&server_message).await {
                     return;
                 }
-                npc.handle(&server_message).await;
-                gg.handle(&server_message).await;
-                sniffa.handle(&server_message).await;
-                the_grind.handle(&server_message).await;
+                if let Err(e) = npc.handle(&server_message).await {
+                    eprintln!("{} error {:?}", npc.handler(), e);
+                };
+                if let Err(e) = gg.handle(&server_message).await {
+                    eprintln!("{} error {:?}", gg.handler(), e);
+                };
+                if let Err(e) = sniffa.handle(&server_message).await {
+                    eprintln!("{} error {:?}", sniffa.handler(), e);
+                };
+                if let Err(e) = the_grind.handle(&server_message).await {
+                    eprintln!("{} error {:?}", the_grind.handler(), e);
+                };
             });
         }
     })
-    .await
-    .unwrap();
+    .await?;
+
+    Ok(())
 }

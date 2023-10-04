@@ -19,76 +19,63 @@ use twitch_api::types::PredictionOutcome;
 use twitch_api::types::PredictionStatus;
 use twitch_api::types::UserId;
 use twitch_api::HelixClient;
+use twitch_irc::login::LoginCredentials;
 use twitch_irc::message::PrivmsgMessage;
 use twitch_irc::message::ServerMessage;
+use twitch_irc::transport::Transport;
+use twitch_irc::TwitchIRCClient;
 
-use crate::auth::IRCClient;
 use crate::handlers::persistence::Handler;
 use crate::handlers::persistence::Reply;
+use crate::handlers::TwitchApiClient;
 
-pub struct GambaTime<'a> {
+pub struct GambaTime<'a, C: TwitchApiClient, T: Transport, L: LoginCredentials> {
     pub token: UserToken,
     pub broadcaster_id: UserId,
-    pub helix_client: HelixClient<'a, reqwest::Client>,
-    pub irc_client: IRCClient,
+    pub helix_client: HelixClient<'a, C>,
+    pub irc_client: TwitchIRCClient<T, L>,
     pub db_pool: SqlitePool,
     pub templates_env: Environment<'a>,
 }
 
-impl<'a> GambaTime<'a> {
+impl<'a, C: TwitchApiClient, T: Transport, L: LoginCredentials> GambaTime<'a, C, T, L> {
     pub fn handler(&self) -> Handler {
         Handler::Gamba
     }
 }
 
-impl<'a> GambaTime<'a> {
-    pub async fn handle(&self, server_message: &ServerMessage) {
+impl<'a, C: TwitchApiClient, T: Transport, L: LoginCredentials> GambaTime<'a, C, T, L> {
+    pub async fn handle(&self, server_message: &ServerMessage) -> anyhow::Result<()> {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
-            match Reply::matching(self.handler(), message, &self.db_pool).await.as_slice() {
-                [reply] => {
-                    let prediction_request = GetPredictionsRequest::builder()
-                        .broadcaster_id(self.broadcaster_id.clone())
-                        .first(Some(1))
-                        .build();
+            let Some(first_matching) = Reply::first_matching(self.handler(), message, &self.db_pool).await? else {
+                return Ok(());
+            };
 
-                    let predictions: Vec<Prediction> = self
-                        .helix_client
-                        .req_get(prediction_request.clone(), &self.token)
-                        .await
-                        .unwrap()
-                        .data;
+            let prediction_request = GetPredictionsRequest::builder()
+                .broadcaster_id(self.broadcaster_id.clone())
+                .first(Some(1))
+                .build();
 
-                    match predictions.first() {
-                        Some(prediction) => match Gamba::try_from(prediction.clone()) {
-                            Ok(gamba) => {
-                                match reply.render_template(
-                                    &self.templates_env,
-                                    Some(&minijinja::value::Value::from_serializable(&gamba)),
-                                ) {
-                                    Ok(rendered_reply) if rendered_reply.is_empty() => {
-                                        eprintln!("Rendered reply template empty: {:?}.", reply)
-                                    }
-                                    Ok(rendered_reply) => {
-                                        self.irc_client.say_in_reply_to(message, rendered_reply).await.unwrap()
-                                    }
-                                    Err(e) => eprintln!("Error rendering reply template, error: {:?}, {:?}.", reply, e),
-                                }
-                            }
-                            Err(e) => eprintln!(
-                                "Error building GambaData for Prediction {:?}, error: {:?}.",
-                                prediction, e
-                            ),
-                        },
-                        None => eprintln!("No Predictions found for request {:?}.", prediction_request),
-                    }
-                }
-                [] => {}
-                multiple_matching_replies => eprintln!(
-                    "Multiple matching replies for message: {:?}, {:?}.",
-                    multiple_matching_replies, server_message
-                ),
-            }
+            let predictions: Vec<Prediction> = self
+                .helix_client
+                .req_get(prediction_request.clone(), &self.token)
+                .await?
+                .data;
+
+            let prediction = predictions
+                .first()
+                .ok_or_else(|| anyhow!("no prediction found for request {:?}", prediction_request))?;
+
+            let gamba = Gamba::try_from(prediction.clone())?;
+
+            let rendered_reply = first_matching.reply.render_template(
+                &self.templates_env,
+                Some(&minijinja::value::Value::from_serializable(&gamba)),
+            )?;
+
+            self.irc_client.say_in_reply_to(message, rendered_reply).await?;
         }
+        Ok(())
     }
 }
 
