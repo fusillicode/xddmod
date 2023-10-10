@@ -22,5 +22,5 @@ sqlx = { version = "0.6.3", features = [
   "offline",
   "migrate",
 ] }
-tokio = { version = "1.32.0", features = ["full"] }
+tokio = { version = "1.33.0", features = ["full"] }
 url = { version = "2.4.1", features = ["serde"] }
