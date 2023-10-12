@@ -41,4 +41,4 @@ twitch-irc = { git = "https://github.com/Retoon/twitch-irc-rs", "branch" = "repl
 ] }
 unicode-segmentation = "1.9.0"
 url = { workspace = true }
-webbrowser = "0.8.11"
+webbrowser = "0.8.12"
