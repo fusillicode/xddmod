@@ -16,7 +16,7 @@ chrono = { workspace = true }
 chrono-tz = "0.8.4"
 config = "0.13.3"
 fake = { workspace = true }
-hyper = { version = "0.14.27", features = ["full"] }
+hyper = { version = "1.0.0", features = ["full"] }
 lazy_static = { workspace = true }
 minijinja = { workspace = true }
 rand = { workspace = true }
