@@ -14,7 +14,7 @@ async-recursion = "1.0.5"
 axum = "0.6.20"
 chrono = { workspace = true }
 chrono-tz = "0.8.4"
-config = "0.13.3"
+config = "0.13.4"
 fake = { workspace = true }
 hyper = { version = "0.14.27", features = ["full"] }
 lazy_static = { workspace = true }
