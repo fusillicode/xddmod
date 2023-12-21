@@ -5,7 +5,7 @@ members = ["src/*"]
 [workspace.dependencies]
 anyhow = { version = "1.0.75", features = ["backtrace"] }
 chrono = "0.4.31"
-fake = { version = "2.9.1", features = ["derive", "chrono", "serde_json"] }
+fake = { version = "2.9.2", features = ["derive", "chrono", "serde_json"] }
 lazy_static = "1.4.0"
 minijinja = "0.32.1"
 rand = "0.8"
