@@ -9,7 +9,7 @@ fake = { version = "2.9.2", features = ["derive", "chrono", "serde_json"] }
 lazy_static = "1.4.0"
 minijinja = "0.32.1"
 rand = "0.8"
-regex = "1.10.2"
+regex = "1.10.3"
 reqwest = "0.11.23"
 serde = "1.0.195"
 serde_json = "1.0.111"
