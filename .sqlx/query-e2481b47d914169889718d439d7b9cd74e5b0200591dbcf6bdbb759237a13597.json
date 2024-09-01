@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "delete from champions",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": []
+  },
+  "hash": "e2481b47d914169889718d439d7b9cd74e5b0200591dbcf6bdbb759237a13597"
+}

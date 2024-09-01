@@ -1,0 +1,80 @@
+{
+  "db_name": "SQLite",
+  "query": "\n                select\n                    id,\n                    handler as \"handler: Handler\",\n                    pattern,\n                    case_insensitive,\n                    template,\n                    channel,\n                    enabled,\n                    created_by,\n                    additional_inputs as \"additional_inputs: Json<serde_json::Value>\",\n                    created_at as \"created_at!: DateTime<Utc>\",\n                    updated_at as \"updated_at!: DateTime<Utc>\"\n                from replies\n                where enabled = 1 and (channel is null or channel = $1) and (handler is null or handler = $2)\n                order by id asc\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "handler: Handler",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "pattern",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "case_insensitive",
+        "ordinal": 3,
+        "type_info": "Bool"
+      },
+      {
+        "name": "template",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "channel",
+        "ordinal": 5,
+        "type_info": "Text"
+      },
+      {
+        "name": "enabled",
+        "ordinal": 6,
+        "type_info": "Bool"
+      },
+      {
+        "name": "created_by",
+        "ordinal": 7,
+        "type_info": "Text"
+      },
+      {
+        "name": "additional_inputs: Json<serde_json::Value>",
+        "ordinal": 8,
+        "type_info": "Null"
+      },
+      {
+        "name": "created_at!: DateTime<Utc>",
+        "ordinal": 9,
+        "type_info": "Null"
+      },
+      {
+        "name": "updated_at!: DateTime<Utc>",
+        "ordinal": 10,
+        "type_info": "Null"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "2b149fd08fd7a2f0506e4c68eb7c563232138ad70b93d4b10f78b6c024304560"
+}

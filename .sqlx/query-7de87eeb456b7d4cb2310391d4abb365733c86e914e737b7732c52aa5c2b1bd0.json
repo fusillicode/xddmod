@@ -1,0 +1,80 @@
+{
+  "db_name": "SQLite",
+  "query": "\n                select\n                    version,\n                    id,\n                    key as \"key!: ChampionKey\",\n                    name,\n                    title,\n                    blurb,\n                    info as \"info!: Json<Info>\",\n                    image as \"image!: Json<Image>\", \n                    tags as \"tags!: Json<Vec<Tag>>\", \n                    partype, \n                    stats as \"stats!: Json<HashMap<String, f64>>\" \n                from champions \n                where key = $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "version",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "id",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "key!: ChampionKey",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "name",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "title",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "blurb",
+        "ordinal": 5,
+        "type_info": "Text"
+      },
+      {
+        "name": "info!: Json<Info>",
+        "ordinal": 6,
+        "type_info": "Null"
+      },
+      {
+        "name": "image!: Json<Image>",
+        "ordinal": 7,
+        "type_info": "Null"
+      },
+      {
+        "name": "tags!: Json<Vec<Tag>>",
+        "ordinal": 8,
+        "type_info": "Null"
+      },
+      {
+        "name": "partype",
+        "ordinal": 9,
+        "type_info": "Text"
+      },
+      {
+        "name": "stats!: Json<HashMap<String, f64>>",
+        "ordinal": 10,
+        "type_info": "Null"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "7de87eeb456b7d4cb2310391d4abb365733c86e914e737b7732c52aa5c2b1bd0"
+}

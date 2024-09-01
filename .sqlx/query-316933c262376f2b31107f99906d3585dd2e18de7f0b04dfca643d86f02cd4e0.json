@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            insert into replies (handler, pattern, template, enabled, created_by) values\n            (\"Npc\", \"^!patch(?:es)?$\", \"Worlds is on 13.19 ok\", 1, $1);\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "316933c262376f2b31107f99906d3585dd2e18de7f0b04dfca643d86f02cd4e0"
+}

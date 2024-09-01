@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n                insert into champions (\n                    version,\n                    id,\n                    key,\n                    name,\n                    title,\n                    blurb,\n                    info,\n                    image,\n                    tags,\n                    partype,\n                    stats\n                )\n                values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 11
+    },
+    "nullable": []
+  },
+  "hash": "31f71c292ccba7c0b7cb3d8938697558b578aab8f7851ed95f0a3a642fbb54da"
+}

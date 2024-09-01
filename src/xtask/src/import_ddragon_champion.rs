@@ -27,9 +27,9 @@ impl ImportDdragonChampion {
             .await?;
 
         let mut tx = db_pool.begin().await.unwrap();
-        Champion::truncate(&mut tx).await.unwrap();
+        Champion::truncate(&mut *tx).await.unwrap();
         for champion in api_response.data.into_values() {
-            champion.insert(&mut tx).await.unwrap();
+            champion.insert(&mut *tx).await.unwrap();
         }
         tx.commit().await.unwrap();
 

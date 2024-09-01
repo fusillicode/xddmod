@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "delete from replies where created_by = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "569f3b015ae09dcb7f26a1f77ee0414fb03ea97ad337b828b023bd1404935cb5"
+}
