@@ -62,7 +62,7 @@ impl<'a> TheGrind<'a> {
                             let template_inputs = TemplateInputs::from(summoner_json);
 
                             match reply
-                                .render_template(&self.templates_env, Some(&Value::from_serializable(&template_inputs)))
+                                .render_template(&self.templates_env, Some(&Value::from_serialize(&template_inputs)))
                             {
                                 Ok(rendered_reply) if rendered_reply.is_empty() => {
                                     eprintln!("Rendered reply template empty: {:?}.", reply)

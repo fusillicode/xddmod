@@ -79,7 +79,7 @@ impl Reply {
         ctx: Option<&S>,
     ) -> Result<String, minijinja::Error> {
         let ctx = match ctx {
-            Some(ctx) => minijinja::value::Value::from_serializable(ctx),
+            Some(ctx) => minijinja::value::Value::from_serialize(ctx),
             None => context!(),
         };
         template_env.render_str(&self.template, ctx).map(|s| s.trim().into())

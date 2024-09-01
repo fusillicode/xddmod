@@ -49,7 +49,7 @@ fn sub_date_times(from_date_time: &str, to_date_time: &str) -> Result<minijinja:
         },
     };
 
-    Ok(minijinja::value::Value::from_serializable(&time_span))
+    Ok(minijinja::value::Value::from_serialize(&time_span))
 }
 
 fn format_duration(duration: &minijinja::value::Value) -> Result<String, minijinja::Error> {
@@ -195,7 +195,7 @@ mod tests {
     #[test]
     fn test_format_duration_works_as_expected() {
         let template = r#"
-            {% if time_span_0.kind == 'InTheFuture' %} still {{ time_span_0.duration | format_duration }} remaning {% endif %}
+            {% if time_span_0.kind == 'InTheFuture' %} still {{ time_span_0.duration | format_duration }} remaining {% endif %}
             {% if time_span_1.kind == 'InThePast' %} {{ time_span_1.duration | format_duration }} ago {% endif %}
             {% if time_span_2.kind == 'Zero' %} {{ time_span_2.duration | format_duration }} ago {% endif %}
         "#;
@@ -207,7 +207,7 @@ mod tests {
         let env = build_global_templates_env();
 
         assert_eq!(
-            "\n             still 1 year 4 months 1 week remaning \n             1 year 4 months 1 week ago \n             0 seconds ago \n        ",
+            "\n             still 1 year 4 months 1 week remaining \n             1 year 4 months 1 week ago \n             0 seconds ago \n        ",
             env.render_str(template, template_context).unwrap()
         );
     }

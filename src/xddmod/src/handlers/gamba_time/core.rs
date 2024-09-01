@@ -63,7 +63,7 @@ impl<'a> GambaTime<'a> {
                             Ok(gamba) => {
                                 match reply.render_template(
                                     &self.templates_env,
-                                    Some(&minijinja::value::Value::from_serializable(&gamba)),
+                                    Some(&minijinja::value::Value::from_serialize(&gamba)),
                                 ) {
                                     Ok(rendered_reply) if rendered_reply.is_empty() => {
                                         eprintln!("Rendered reply template empty: {:?}.", reply)
@@ -151,7 +151,7 @@ impl From<PredictionOutcome> for Side {
 pub enum GambaState {
     Up,
     Closed { closed_at: DateTime<Utc> },
-    Payed { winner: Side, payed_at: DateTime<Utc> },
+    Paid { winner: Side, paid_at: DateTime<Utc> },
     Refunded { refunded_at: DateTime<Utc> },
 }
 
@@ -190,9 +190,9 @@ impl TryFrom<Prediction> for GambaState {
                         )
                     })?;
 
-                Self::Payed {
+                Self::Paid {
                     winner,
-                    payed_at: x
+                    paid_at: x
                         .clone()
                         .locked_at
                         .map(|t| Utc.timestamp_nanos(t.to_utc().unix_timestamp()))

@@ -1,4 +1,4 @@
-use hyper::StatusCode;
+use http::StatusCode;
 use twitch_api::helix::ClientRequestError;
 use twitch_api::helix::HelixRequestDeleteError;
 use twitch_api::helix::HelixRequestGetError;

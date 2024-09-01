@@ -10,6 +10,7 @@ use axum::response::Response;
 use axum::routing::get;
 use axum::Router;
 use serde::Deserialize;
+use tokio::net::TcpListener;
 use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::sync::Mutex;
 use twitch_api::twitch_oauth2::tokens::UserTokenBuilder;
@@ -60,11 +61,9 @@ pub async fn authenticate<'a>(app_config: AppConfig) -> (MessageReceiver, IRCCli
         .route("/auth", get(auth_callback))
         .with_state(app_state.clone());
 
+    let listener = TcpListener::bind(&app_config.socket_addr).await.unwrap();
     let auth_server = tokio::spawn(async move {
-        axum::Server::bind(&app_config.socket_addr)
-            .serve(app.into_make_service())
-            .await
-            .unwrap();
+        axum::serve(listener, app.into_make_service()).await.unwrap();
     });
 
     let AuthResponseStep1 { code, state } = receiver.recv().unwrap();
