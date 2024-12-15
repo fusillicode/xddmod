@@ -15,13 +15,13 @@ pub struct Npc<'a> {
     pub templates_env: Environment<'a>,
 }
 
-impl<'a> Npc<'a> {
+impl Npc<'_> {
     pub fn handler(&self) -> Handler {
         Handler::Npc
     }
 }
 
-impl<'a> Npc<'a> {
+impl Npc<'_> {
     pub async fn handle(&self, server_message: &ServerMessage) {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
             match Reply::matching(self.handler(), message, &self.db_pool).await.as_slice() {

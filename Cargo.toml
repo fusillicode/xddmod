@@ -3,16 +3,16 @@ resolver = "2"
 members = ["src/*"]
 
 [workspace.dependencies]
-anyhow = { version = "1.0.79", features = ["backtrace"] }
-chrono = "0.4.31"
-fake = { version = "2.9.2", features = ["derive", "chrono", "serde_json"] }
-lazy_static = "1.4.0"
-minijinja = "2.1.2"
+anyhow = { version = "1.0", features = ["backtrace"] }
+chrono = "0.4"
+fake = { version = "3.0", features = ["derive", "chrono", "serde_json"] }
+lazy_static = "1.4"
+minijinja = "2.1"
 rand = "0.8"
-regex = "1.10.2"
-reqwest = { version = "0.11.17", features = ["json"] }
-serde = "1.0.195"
-serde_json = "1.0.111"
+regex = "1.10"
+reqwest = { version = "0.11", features = ["json"] }
+serde = "1.0"
+serde_json = "1.0"
 sqlx = { version = "0.7.4", features = [
   "runtime-tokio-native-tls",
   "uuid",
@@ -21,5 +21,5 @@ sqlx = { version = "0.7.4", features = [
   "sqlite",
   "migrate",
 ] }
-tokio = { version = "1.35.1", features = ["full"] }
-url = { version = "2.5.0", features = ["serde"] }
+tokio = { version = "1.35", features = ["full"] }
+url = { version = "2.5", features = ["serde"] }

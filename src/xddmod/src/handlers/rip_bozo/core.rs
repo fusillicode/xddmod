@@ -26,13 +26,13 @@ pub struct RipBozo<'a> {
     pub db_pool: SqlitePool,
 }
 
-impl<'a> RipBozo<'a> {
+impl RipBozo<'_> {
     pub fn handler(&self) -> Handler {
         Handler::RipBozo
     }
 }
 
-impl<'a> RipBozo<'a> {
+impl RipBozo<'_> {
     pub async fn handle(&mut self, server_message: &ServerMessage) -> anyhow::Result<bool> {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
             if twitch::helpers::is_from_streamer_or_mod(message) {

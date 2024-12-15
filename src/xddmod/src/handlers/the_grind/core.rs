@@ -22,13 +22,13 @@ pub struct TheGrind<'a> {
     pub templates_env: Environment<'a>,
 }
 
-impl<'a> TheGrind<'a> {
+impl TheGrind<'_> {
     pub fn handler(&self) -> Handler {
         Handler::TheGrind
     }
 }
 
-impl<'a> TheGrind<'a> {
+impl TheGrind<'_> {
     pub async fn handle(&self, server_message: &ServerMessage) {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
             match Reply::matching(self.handler(), message, &self.db_pool).await.as_slice() {

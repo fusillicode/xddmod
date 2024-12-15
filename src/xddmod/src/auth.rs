@@ -30,7 +30,7 @@ use crate::app_config::AppConfig;
 pub type MessageReceiver = UnboundedReceiver<ServerMessage>;
 pub type IRCClient = TwitchIRCClient<SecureTCPTransport, RefreshingLoginCredentials<InMemoryTokenStorage>>;
 
-pub async fn authenticate<'a>(app_config: AppConfig) -> (MessageReceiver, IRCClient, UserToken) {
+pub async fn authenticate(app_config: AppConfig) -> (MessageReceiver, IRCClient, UserToken) {
     let auth_callback_url = {
         let mut x = app_config.server_url.clone();
         x.set_path("auth");

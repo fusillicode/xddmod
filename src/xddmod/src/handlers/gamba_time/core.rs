@@ -35,13 +35,13 @@ pub struct GambaTime<'a> {
     pub templates_env: Environment<'a>,
 }
 
-impl<'a> GambaTime<'a> {
+impl GambaTime<'_> {
     pub fn handler(&self) -> Handler {
         Handler::Gamba
     }
 }
 
-impl<'a> GambaTime<'a> {
+impl GambaTime<'_> {
     pub async fn handle(&self, server_message: &ServerMessage) {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
             match Reply::matching(self.handler(), message, &self.db_pool).await.as_slice() {

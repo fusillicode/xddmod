@@ -22,13 +22,13 @@ pub struct Gg<'a> {
     pub templates_env: Environment<'a>,
 }
 
-impl<'a> Gg<'a> {
+impl Gg<'_> {
     pub fn handler(&self) -> Handler {
         Handler::Gg
     }
 }
 
-impl<'a> Gg<'a> {
+impl Gg<'_> {
     pub async fn handle(&self, server_message: &ServerMessage) {
         if let ServerMessage::Privmsg(message @ PrivmsgMessage { is_action: false, .. }) = server_message {
             match Reply::matching(self.handler(), message, &self.db_pool).await.as_slice() {

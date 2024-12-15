@@ -10,13 +10,13 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = { workspace = true }
-async-recursion = "1.0.5"
-axum = "0.7.5"
+async-recursion = "1.0"
+axum = "0.7"
 chrono = { workspace = true }
-chrono-tz = "0.9.0"
-config = "0.14.0"
+chrono-tz = "0.10"
+config = "0.14"
 fake = { workspace = true }
-http = { version = "0.2.9" }
+http = { version = "0.2" }
 lazy_static = { workspace = true }
 minijinja = { workspace = true }
 rand = { workspace = true }
@@ -25,20 +25,20 @@ reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sqlx = { workspace = true }
-timeago = "0.4.2"
+timeago = "0.4"
 tokio = { workspace = true }
-tower = "0.5.0"
+tower = "0.5"
 twitch_api = { version = "0.7.0-rc.7", features = [
   "twitch_oauth2",
   "helix",
   "reqwest",
   "typed-builder",
 ] }
-twitch_types = { version = "0.4.4", features = ["time"] }
+twitch_types = { version = "0.4", features = ["time"] }
 twitch-irc = { git = "https://github.com/Retoon/twitch-irc-rs", "branch" = "reply_parent_feature", features = [
   "with-serde",
   "refreshing-token-native-tls",
 ] }
-unicode-segmentation = "1.9.0"
+unicode-segmentation = "1.9"
 url = { workspace = true }
-webbrowser = "1.0.1"
+webbrowser = "1.0"
